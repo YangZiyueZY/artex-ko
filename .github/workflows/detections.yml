@@ -37,6 +37,7 @@ on:
       # 重新验证，因此加入触发器。
       - "docs/defense-ko.md"
       - "docs/defense-en.md"
+      - "docs/defense-zh.md"
       - ".github/workflows/detections.yml"
   pull_request:
     paths:
@@ -51,6 +52,7 @@ on:
       - "traffic/traffic.go"
       - "docs/defense-ko.md"
       - "docs/defense-en.md"
+      - "docs/defense-zh.md"
       - ".github/workflows/detections.yml"
 
 permissions:

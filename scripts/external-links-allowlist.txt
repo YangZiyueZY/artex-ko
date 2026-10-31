@@ -7,7 +7,7 @@
 #
 # 格式：每行一个 URL。`#` 之后是注释，空行·纯注释行会忽略。
 
-# 上游（Autumn-27/ARTEX）CHANGELOG.zh.md:539 致谢的贡献者 GitHub 主页。
+# 上游（Autumn-27/ARTEX）CHANGELOG.zh.md:542 致谢的贡献者 GitHub 主页。
 # 账号已改名·删除，因此 404。按照上游原文保留方针（BRIEF 边界 #1·MAINTAINING 第 2 节），
 # CHANGELOG.zh.md 保持上游原样，因此我们不做修复。2026-10-07 确认。
 https://github.com/begininvoke

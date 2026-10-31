@@ -8,7 +8,7 @@ body:
       value: |
         感谢帮助提升全球版的翻译质量。
         本仓库的本地化方针是：**只把用户可见的产物转换为所选语言，智能体的内部推理提示词以及命令、payload、代码、日志原文一律保持原样。**
-        详细原则见 [CONTRIBUTING.md](https://github.com/jiwoochris/artex-global/blob/main/CONTRIBUTING.md#현지화-방침)。
+          详细原则见 [CONTRIBUTING.md](../../CONTRIBUTING.md#本地化方针)（本地化方针：中文为源语言，其他语言填各自文件）。
   - type: dropdown
     id: kind
     attributes:
