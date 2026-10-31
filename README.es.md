@@ -4,9 +4,9 @@
 
 **Un sistema autónomo de pruebas de penetración impulsado por multiagentes LLM** (backend en Go + frontend en Next.js)
 
-La interfaz y la salida generada están en inglés de forma predeterminada y **pueden cambiarse a coreano, chino, español o japonés en Ajustes (Sistema → Ajustes → Idioma de la interfaz).** Cambiar el idioma también cambia el idioma de los informes, los resúmenes y las respuestas de chat que generan los agentes.
+La interfaz y la salida generada están en chino simplificado de forma predeterminada y **pueden cambiarse a inglés, coreano, español o japonés en Ajustes (Sistema → Ajustes → Idioma de la interfaz).** Cambiar el idioma también cambia el idioma de los informes, los resúmenes y las respuestas de chat que generan los agentes.
 
-Español · [English](README.md) · [한국어](README.ko.md) · [中文](README.zh.md) · [日本語](README.ja.md)
+Español · [English](README.en.md) · [한국어](README.ko.md) · [中文](README.md) · [日本語](README.ja.md)
 
 [![ci](https://github.com/jiwoochris/artex-global/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jiwoochris/artex-global/actions/workflows/ci.yml) [![detections](https://github.com/jiwoochris/artex-global/actions/workflows/detections.yml/badge.svg?branch=main)](https://github.com/jiwoochris/artex-global/actions/workflows/detections.yml) [![web](https://github.com/jiwoochris/artex-global/actions/workflows/web.yml/badge.svg?branch=main)](https://github.com/jiwoochris/artex-global/actions/workflows/web.yml) [![license: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 
@@ -28,11 +28,11 @@ Español · [English](README.md) · [한국어](README.ko.md) · [中文](README
 
 ---
 
-> **Este repositorio es una edición localizada del proyecto chino de código abierto [Autumn-27/ARTEX](https://github.com/Autumn-27/ARTEX) (AGPL-3.0 · el repositorio original está actualmente inaccesible, comprobado en 2026-10), adaptada para que usuarios y equipos de todo el mundo puedan adoptarlo tal cual.** Para preservar el rendimiento de decisión de los agentes, los prompts de razonamiento interno se mantienen en el idioma original, y solo la salida orientada al usuario (hallazgos, resúmenes, informes y respuestas de chat) se fuerza al idioma seleccionado (inglés de forma predeterminada). Consulte ["Por qué una edición global"](#por-qué-una-edición-global) más abajo para conocer el razonamiento.
+> **Este repositorio es una edición localizada del proyecto chino de código abierto [Autumn-27/ARTEX](https://github.com/Autumn-27/ARTEX) (AGPL-3.0 · el repositorio original está actualmente inaccesible, comprobado en 2026-10), adaptada para que usuarios y equipos de todo el mundo puedan adoptarlo tal cual; esta copia es el fork de distribución en chino simplificado ([YangZiyueZY/artex-ko](https://github.com/YangZiyueZY/artex-ko)) de la edición global [jiwoochris/artex-global](https://github.com/jiwoochris/artex-global).** Para preservar el rendimiento de decisión de los agentes, los prompts de razonamiento interno se mantienen en el idioma original, y solo la salida orientada al usuario (hallazgos, resúmenes, informes y respuestas de chat) se fuerza al idioma seleccionado (chino simplificado de forma predeterminada). Consulte ["Por qué una edición global"](#por-qué-una-edición-global) más abajo para conocer el razonamiento.
 
 ARTEX es un sistema en el que varios agentes impulsados por LLM ejecutan de forma autónoma una prueba de penetración: **descomponen los objetivos por su cuenta, ejecutan herramientas reales y van acumulando en un grafo los activos y las vulnerabilidades que descubren** a medida que avanzan. Un único binario de Go incorpora el frontend de Next.js embebido, y todos los datos se almacenan en PostgreSQL.
 
-> **Nota sobre el idioma de esta edición.** Este fork hace que el producto se pueda usar en cinco idiomas — **inglés (predeterminado), coreano, chino, español y japonés** — seleccionables en Ajustes. La salida orientada al usuario se fuerza al idioma seleccionado, mientras que los prompts de razonamiento interno de los agentes se mantienen en el idioma original para preservar el rendimiento medido en los benchmarks. Consulte [Configuración](#configuración) para saber cómo se impone el idioma de salida mediante una pequeña directiva fijada en el código.
+> **Nota sobre el idioma de esta edición.** Este fork hace que el producto se pueda usar en cinco idiomas — **chino simplificado (predeterminado), inglés, coreano, español y japonés** — seleccionables en Ajustes. La salida orientada al usuario se fuerza al idioma seleccionado, mientras que los prompts de razonamiento interno de los agentes se mantienen en el idioma original para preservar el rendimiento medido en los benchmarks. Consulte [Configuración](#configuración) para saber cómo se impone el idioma de salida mediante una pequeña directiva fijada en el código.
 
 ---
 
@@ -53,18 +53,18 @@ Los términos completos de la licencia, las restricciones de uso y el descargo d
 
 El ARTEX original tiene sus prompts, su interfaz y su documentación enteramente en chino, lo que resultaba engorroso para cualquiera que no lea chino a la hora de leer los resultados y compartirlos con un equipo. Esta edición busca:
 
-- **Localizar la salida** — los hallazgos, los resúmenes de hechos, los informes finales y las respuestas de chat que los agentes muestran a una persona se fuerzan al idioma seleccionado (inglés de forma predeterminada; coreano, chino, español y japonés seleccionables). Los comandos, los payloads, el código, las URL y los registros en bruto se necesitan para el análisis y se dejan en su forma original.
+- **Localizar la salida** — los hallazgos, los resúmenes de hechos, los informes finales y las respuestas de chat que los agentes muestran a una persona se fuerzan al idioma seleccionado (chino simplificado de forma predeterminada; inglés, coreano, español y japonés seleccionables). Los comandos, los payloads, el código, las URL y los registros en bruto se necesitan para el análisis y se dejan en su forma original.
 - **Preservar el rendimiento** — los prompts de razonamiento interno (el cuerpo de instrucciones de comportamiento) que guían el juicio de los agentes **no** se traducen. El comportamiento medido en los benchmarks en el idioma original se mantiene intacto, y solo cambia el idioma de salida, lo que evita la deriva de calidad que introduce la traducción.
 - **Enunciar los límites legales** — la advertencia de "solo dentro del alcance autorizado" se expresa con claridad, junto con los avisos específicos de Corea sobre derecho de redes y privacidad (los mantenedores residen en Corea); también se aplica la ley del lugar donde usted opere.
 - **Dar soporte a diversas infraestructuras de LLM** — el proveedor de LLM puede cambiarse de un modelo de frontera a cualquier endpoint compatible con OpenAI (modelos locales o abiertos). Consulte [Configuración](#configuración).
 
-> Los límites y la política de diseño de esta edición multilingüe se documentan con más detalle en las notas de trabajo del repositorio. Para facilitar la comparación (diff) con el repositorio original, el documento chino original se conserva como [`README.zh.md`](README.zh.md).
+> Los límites y la política de diseño de esta edición multilingüe se documentan con más detalle en las notas de trabajo del repositorio. Para facilitar la comparación (diff) con el repositorio original, el README chino del proyecto original se ha integrado en el documento principal en chino simplificado [`README.md`](README.md); [`README.zh.md`](README.zh.md) ahora solo apunta allí.
 
 ---
 
 ## Capturas de pantalla
 
-Las tres pantallas siguientes muestran la interfaz predeterminada en inglés (conmutable a coreano, chino, español y japonés en Ajustes). Los datos provienen de un entorno de pruebas local y aislado: todos los objetivos son el ficticio `acme.com` y rangos de direcciones privadas.
+Las tres pantallas siguientes muestran la interfaz en inglés (conmutable a chino simplificado, coreano, español y japonés en Ajustes). Los datos provienen de un entorno de pruebas local y aislado: todos los objetivos son el ficticio `acme.com` y rangos de direcciones privadas.
 
 <p align="center">
   <img src="screenshots/en/dashboard.png" width="900" alt="Vista general del panel"><br>
@@ -74,7 +74,7 @@ Las tres pantallas siguientes muestran la interfaz predeterminada en inglés (co
 <p align="center">
   <img src="screenshots/en/findings.png" width="900" alt="Lista de hallazgos"><br>
   <sub><b>Hallazgos</b> — resultados agregados por severidad, estado, activo y tarea propietaria, exportables a CSV.</sub><br>
-  <sub>Los <b>títulos</b> de los hallazgos los genera el modelo, por lo que pueden aparecer términos técnicos en inglés, reflejando la aplicación objetivo ([Selección de modelo e idioma de salida](#selección-de-modelo-e-idioma-de-salida)). La descripción bajo cada título y el resto de la interfaz están en inglés (el predeterminado; conmutable en Ajustes).</sub>
+  <sub>Los <b>títulos</b> de los hallazgos los genera el modelo, por lo que pueden aparecer términos técnicos en inglés, reflejando la aplicación objetivo ([Selección de modelo e idioma de salida](#selección-de-modelo-e-idioma-de-salida)). La descripción bajo cada título y el resto de la interfaz están en inglés (el idioma de visualización usado aquí; conmutable en Ajustes).</sub>
 </p>
 
 <p align="center">
@@ -82,7 +82,7 @@ Las tres pantallas siguientes muestran la interfaz predeterminada en inglés (co
   <sub><b>Chat</b> — una persona interviene en la ejecución autónoma para inyectar pistas mientras el agente resume la cadena de ataque en inglés.</sub>
 </p>
 
-Las pantallas originales (interfaz en chino) están disponibles en [`README.zh.md`](README.zh.md#截图预览) (interfaz en chino).
+Las pantallas originales (interfaz en chino) están disponibles en [`README.md`](README.md#截图预览) (documento principal en chino simplificado).
 
 ---
 
@@ -93,8 +93,8 @@ Las pantallas originales (interfaz en chino) están disponibles en [`README.zh.m
 > **Imagen:** el servicio `artex` de `docker-compose.yml` descarga `ghcr.io/jiwoochris/artex-global`, la imagen de la edición global que este repositorio publica en GitHub Container Registry con cada etiqueta de versión (`v*`). La etiqueta predeterminada es `latest` (la versión más reciente); fije `ARTEX_TAG` en `.env` para anclar una versión concreta. La imagen original `autumn27/artex` se ha retirado de Docker Hub y ya no se utiliza.
 
 ```bash
-git clone https://github.com/jiwoochris/artex-global.git
-cd artex-global
+git clone https://github.com/YangZiyueZY/artex-ko.git
+cd artex-ko
 cp .env.example .env          # set POSTGRES_PASSWORD; ANTHROPIC_API_KEY is optional
 docker compose up -d          # brings up the artex image + postgres together
 # → open http://localhost:8787 (on first visit, set the admin password at /setup)
@@ -105,7 +105,7 @@ La imagen incluye herramientas habituales (ripgrep, curl, vim, npm, nmap y más)
 
 ### Otros métodos de instalación
 
-El proyecto original ofrece varios métodos: un script de instalación (`./install.sh`), binarios precompilados (Releases) y una compilación de binario único desde el código fuente. Los comandos y el procedimiento completo están reunidos en la sección "安装" (Instalación) de [`README.zh.md`](README.zh.md#安装) (en chino); lo esencial se reproduce a continuación.
+El proyecto original ofrece varios métodos: un script de instalación (`./install.sh`), binarios precompilados (Releases) y una compilación de binario único desde el código fuente. Los comandos y el procedimiento completo están reunidos en la sección "安装" (Instalación) de [`README.md`](README.md#安装) (documento principal en chino simplificado); lo esencial se reproduce a continuación.
 
 - **Script de instalación:** ejecutar `./install.sh` detecta/instala Docker y luego le permite elegir "① todo en Docker" o "② compilar y ejecutar localmente". "① todo en Docker" descarga y arranca la misma imagen que el inicio rápido de arriba (`ghcr.io/jiwoochris/artex-global`), mientras que "② compilar y ejecutar localmente" la construye usted mismo de la misma manera que la **compilación de binario único desde el código fuente** descrita abajo.
 - **Compilación de binario único desde el código fuente:**
@@ -139,7 +139,7 @@ El proyecto original ofrece varios métodos: un script de instalación (`./insta
 
 **LLM:** `export ANTHROPIC_API_KEY=sk-...` (o `OPENAI_API_KEY`), o introdúzcala en la página "LLM settings" de la interfaz. Variables de entorno opcionales: `ARTEX_LLM_PROVIDER` / `ARTEX_LLM_MODEL` / `ARTEX_LLM_BASE_URL` / `ARTEX_LLM_PROXY`. Para usar un modelo local o abierto, apunte `ARTEX_LLM_BASE_URL` a un endpoint compatible con OpenAI.
 
-**Idioma de salida:** esta edición fuerza la salida orientada al usuario al idioma seleccionado (inglés de forma predeterminada) mediante una pequeña directiva fijada en el código que se añade al system prompt de cada rol (no traduce el cuerpo de razonamiento). Cambie de idioma en Ajustes, o adapte esa directiva en `agent/prompt.go` (`langDirective`).
+**Idioma de salida:** esta edición fuerza la salida orientada al usuario al idioma seleccionado (chino simplificado de forma predeterminada) mediante una pequeña directiva fijada en el código que se añade al system prompt de cada rol (no traduce el cuerpo de razonamiento). Cambie de idioma en Ajustes, o adapte esa directiva en `agent/prompt.go` (`langDirective`).
 
 **Concurrencia:** el número de agentes worker generados por tarea es ajustable en "System settings" (3 por defecto).
 
@@ -159,7 +159,7 @@ La imposición del idioma de salida está **guiada por una directiva del prompt 
 
 Hay una única cuenta de administrador (`ARTEX`) cuya contraseña se crea en la primera visita en `/setup`. Para que quien llegue primero a una instancia aún no inicializada no pueda apropiársela, se aplican las siguientes protecciones.
 
-- **Token de configuración.** Cuando el servidor arranca sin contraseña, imprime una línea `[auth] … Setup token: …` en la consola (el idioma predeterminado es el inglés, por lo que el registro también está en inglés; `docker compose logs artex` bajo Docker). `/setup` y `POST /api/auth/init` (campo `setup_token`) solo crean la contraseña cuando ese valor coincide, y los intentos erróneos tienen límite de frecuencia. Para despliegues desatendidos, fíjelo con `ARTEX_SETUP_TOKEN`, o establezca la contraseña directamente con `ARTEX_ADMIN_PASSWORD` (8 o más caracteres).
+- **Token de configuración.** Cuando el servidor arranca sin contraseña, imprime una línea `[auth] … Setup token: …` en la consola (`docker compose logs artex` bajo Docker). `/setup` y `POST /api/auth/init` (campo `setup_token`) solo crean la contraseña cuando ese valor coincide, y los intentos erróneos tienen límite de frecuencia. Para despliegues desatendidos, fíjelo con `ARTEX_SETUP_TOKEN`, o establezca la contraseña directamente con `ARTEX_ADMIN_PASSWORD` (8 o más caracteres).
 - **Se enlaza a 127.0.0.1 por defecto.** Tanto el valor predeterminado de `-addr` de `artex` como la publicación de puertos en `docker-compose.yml` abren únicamente la interfaz de loopback. Para alcanzarla desde otras máquinas, use `-addr :8787` o `ARTEX_BIND=0.0.0.0` en `.env`, pero termine primero la configuración inicial y prefiera la disposición con proxy inverso de más abajo. Arrancar sin contraseña en una dirección que no sea loopback registra una advertencia.
 - **Cambiar la contraseña finaliza todas las sesiones.** La clave de firma de los tokens está ligada al hash de la contraseña, de modo que los tokens emitidos antes de un cambio (desde la interfaz, `reset-password.sh` o una edición directa de la BD) dejan de funcionar en cuestión de segundos. Al recuperarse de una cuenta comprometida, revise también las herramientas personalizadas, MCP, el LLM y los ajustes de notificación después de cambiar la contraseña.
 - **CORS.** `/api` solo responde a llamadas de navegador de origen cruzado procedentes de orígenes listados en `ARTEX_CORS_ORIGINS` (separados por comas). La interfaz embebida es del mismo origen, así que esto normalmente está vacío; el valor predeterminado solo permite `next dev` desde `dev.sh` (`http://localhost:5173`).
@@ -168,7 +168,7 @@ Hay una única cuenta de administrador (`ARTEX`) cuya contraseña se crea en la 
 
 El frontend y la API/SSE los sirve el mismo puerto de backend (por defecto `:8787`), y el flujo de actividad en vivo se conecta **al mismo origen** de forma predeterminada. Así que no hace falta establecer `NEXT_PUBLIC_SSE_BASE` por separado: exponga solo el 443 a la red pública y mantenga el 8787 interno.
 
-SSE mantiene una conexión de larga duración y sigue enviando eventos, por lo que **debe desactivar el almacenamiento en búfer (buffering)** en el proxy inverso. Si no lo hace, el navegador se conecta pero no recibe ningún evento (el flujo de actividad parece quedarse cargando). Hay un ejemplo de configuración de Nginx en [`README.zh.md`](README.zh.md#反向代理部署https--只开放-443).
+SSE mantiene una conexión de larga duración y sigue enviando eventos, por lo que **debe desactivar el almacenamiento en búfer (buffering)** en el proxy inverso. Si no lo hace, el navegador se conecta pero no recibe ningún evento (el flujo de actividad parece quedarse cargando). Hay un ejemplo de configuración de Nginx en [`README.md`](README.md#反向代理部署https--只开放-443).
 
 ---
 
@@ -373,7 +373,7 @@ Desarrollo y pruebas locales:
 - Pruebas: `go test ./...`
 - Vista previa simulada (sin backend): `cd web && NEXT_PUBLIC_MOCK=1 npm run dev`
 
-Para otros temas de desarrollo (como la reverificación manual de vulnerabilidades), consulte la sección "开发" (Desarrollo) de [`README.zh.md`](README.zh.md#开发).
+Para otros temas de desarrollo (como la reverificación manual de vulnerabilidades), consulte la sección "开发" (Desarrollo) de [`README.md`](README.md#开发).
 
 Los cambios que esta edición global añade sobre el ARTEX original se registran en el [registro de cambios (CHANGELOG.en.md)](CHANGELOG.en.md).
 
@@ -407,6 +407,7 @@ Este proyecto se proporciona "TAL CUAL" (AS IS), sin garantía alguna, expresa o
 ## Proyecto original (upstream)
 
 - Repositorio original: [Autumn-27/ARTEX](https://github.com/Autumn-27/ARTEX) (actualmente inaccesible, comprobado en 2026-10)
-- README original (chino): [README.zh.md](README.zh.md)
+- README original (chino): integrado en el documento principal en chino simplificado [README.md](README.md); [README.zh.md](README.zh.md) ahora solo apunta allí
 - Demo en línea original (interfaz en chino): [https://artex-demo.vercel.app/](https://artex-demo.vercel.app/) (actualmente inaccesible, comprobado en 2026-10)
 - SDK de agentes: [Autumn-27/norma](https://github.com/Autumn-27/norma) (actualmente inaccesible, comprobado en 2026-10)
+- Este repositorio (fork de distribución en chino simplificado): [YangZiyueZY/artex-ko](https://github.com/YangZiyueZY/artex-ko), un fork de la edición global [jiwoochris/artex-global](https://github.com/jiwoochris/artex-global) (mantenedores con base en Corea), cuyas imágenes se publican en GitHub Container Registry (`ghcr.io/jiwoochris/artex-global`)

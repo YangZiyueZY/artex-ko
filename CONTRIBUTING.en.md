@@ -1,6 +1,6 @@
 # Contributing
 
-[한국어](CONTRIBUTING.md) · English
+[中文](CONTRIBUTING.md) · English · [한국어](CONTRIBUTING.ko.md)
 
 Thank you for your interest in the global edition of ARTEX (`artex-global`). This document
 gathers the scope, policies, and procedures you should know before you start contributing.
@@ -28,7 +28,7 @@ testing **autonomously**. Contributors are bound by the same scope limits as use
   network without authorization, or causing a disruption to it, violates the Act on Promotion
   of Information and Communications Network Utilization and Information Protection; and any
   personal data collected or exposed falls under the Personal Information Protection Act. The
-  full notice is in the [README](README.md#️-read-first--authorized-use-and-legal-notice).
+  full notice is in the [README](README.en.md#️-read-first--authorized-use-and-legal-notice).
 
 Legal responsibility for how the code or documentation you contribute is used rests with the
 user who runs it. This repository is provided "AS IS."
@@ -63,7 +63,7 @@ this policy can degrade performance, so we do not accept them.
   reports and summaries to the original language (Chinese), so do not judge whether a translation
   is applied correctly from a cheap model's output alone. The `max_tokens` pitfall when using
   OpenAI-family models is covered in the
-  [README's "Model selection and output language" section](README.md#model-selection-and-output-language).
+  [README's "Model selection and output language" section](README.en.md#model-selection-and-output-language).
 - **The procedure for keeping up with upstream changes is in the maintainer document.** When
   the original ARTEX is updated, the runbook for distinguishing preserved assets from
   translation targets, reflecting them, and checking translation symmetry and drift is in

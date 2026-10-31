@@ -1,5 +1,8 @@
 # 更新日志
 
+> **本仓库（ARTEX 全球版）自身的变更已以简体中文记录在 [CHANGELOG.md](CHANGELOG.md)，请以该文件为准。**
+> 本文件原样保留上游 [Autumn-27/ARTEX](https://github.com/Autumn-27/ARTEX) 0.3.14 及更早版本的中文原始变更历史（含贡献者名单），用于与上游对照，请勿在此记录本仓库的变更。
+
 本项目的重要变更记录在此文件中，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
 ## [Unreleased]

@@ -1,6 +1,6 @@
 # Security Policy
 
-[한국어](SECURITY.md) · English
+[中文](SECURITY.md) · English · [한국어](SECURITY.ko.md)
 
 This document explains how to report security vulnerabilities in the **ARTEX global edition (`artex-global`) code itself**. ARTEX is an offensive-security tool that performs penetration testing, but what this document covers is not the results of attacking something with the tool; it is **vulnerabilities that arise when you operate or deploy this software**.
 
@@ -39,7 +39,7 @@ This repository is a **multilingual localization of the original ARTEX**, mainta
 The following are **not** covered by this security policy.
 
 - A vulnerability in **an external system** that you discovered by attacking it with ARTEX. That is something to report to the owner of that system.
-- Problems caused by running the tool against someone else's system without authorization. Such use itself violates the [usage scope](README.md#️-read-first--authorized-use-and-legal-notice) and domestic law.
+- Problems caused by running the tool against someone else's system without authorization. Such use itself violates the [usage scope](README.en.md#️-read-first--authorized-use-and-legal-notice) and domestic law.
 - The mere fact that ARTEX runs an offensive tool "by design." This tool is built to perform penetration testing within an authorized scope.
 
 If you witness **misuse** of this tool (use beyond the authorized scope), do not report it through GitHub. Use the lawful reporting channels appropriate to the conduct (the owner of the affected system or the relevant authorities).

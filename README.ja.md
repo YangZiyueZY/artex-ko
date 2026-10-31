@@ -4,9 +4,9 @@
 
 **LLM マルチエージェントが駆動する自律型ペネトレーションテストシステム**（Go バックエンド + Next.js フロントエンド）
 
-UI と生成される出力はデフォルトで英語になっており、**設定（システム → 設定 → 表示言語）で韓国語・中国語・スペイン語・日本語に切り替えられます。** 言語を変えると、エージェントが生成するレポート・要約・チャット応答の言語も一緒に変わります。
+UI と生成される出力はデフォルトで簡体字中国語になっており、**設定（システム → 設定 → 表示言語）で英語・韓国語・スペイン語・日本語に切り替えられます。** 言語を変えると、エージェントが生成するレポート・要約・チャット応答の言語も一緒に変わります。
 
-日本語 · [English](README.md) · [한국어](README.ko.md) · [中文](README.zh.md) · [Español](README.es.md)
+日本語 · [English](README.en.md) · [한국어](README.ko.md) · [中文](README.md) · [Español](README.es.md)
 
 [![ci](https://github.com/jiwoochris/artex-global/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jiwoochris/artex-global/actions/workflows/ci.yml) [![detections](https://github.com/jiwoochris/artex-global/actions/workflows/detections.yml/badge.svg?branch=main)](https://github.com/jiwoochris/artex-global/actions/workflows/detections.yml) [![web](https://github.com/jiwoochris/artex-global/actions/workflows/web.yml/badge.svg?branch=main)](https://github.com/jiwoochris/artex-global/actions/workflows/web.yml) [![license: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 
@@ -28,11 +28,11 @@ UI と生成される出力はデフォルトで英語になっており、**設
 
 ---
 
-> **このリポジトリは、中国発のオープンソースプロジェクト [Autumn-27/ARTEX](https://github.com/Autumn-27/ARTEX)（AGPL-3.0 · 上流リポジトリは現在アクセス不可、2026-10 確認）を、世界中のユーザーやチームがそのまま採用できるようにローカライズした版です。** エージェントの意思決定性能を保つため、内部の推論プロンプトは原語のまま維持し、ユーザー向けの出力（検出結果・要約・レポート・チャット応答）だけを選択した言語（デフォルトは英語）に強制します。その理由は下記の[「なぜグローバル版なのか」](#なぜグローバル版なのか)で説明します。
+> **このリポジトリは、中国発のオープンソースプロジェクト [Autumn-27/ARTEX](https://github.com/Autumn-27/ARTEX)（AGPL-3.0 · 上流リポジトリは現在アクセス不可、2026-10 確認）を、世界中のユーザーやチームがそのまま採用できるようにローカライズした版です。このチェックアウトは、グローバル版 [jiwoochris/artex-global](https://github.com/jiwoochris/artex-global) の簡体字中国語ディストリビューション・フォーク（[YangZiyueZY/artex-ko](https://github.com/YangZiyueZY/artex-ko)）です。** エージェントの意思決定性能を保つため、内部の推論プロンプトは原語のまま維持し、ユーザー向けの出力（検出結果・要約・レポート・チャット応答）だけを選択した言語（デフォルトは簡体字中国語）に強制します。その理由は下記の[「なぜグローバル版なのか」](#なぜグローバル版なのか)で説明します。
 
 ARTEX は、LLM が駆動する複数のエージェントが自律的にペネトレーションテストを進めるシステムです。エージェントは **自分で目標を分解し、実際のツールを実行し、発見した資産と脆弱性をグラフに積み上げていきます。** Go の単一バイナリに Next.js フロントエンドが埋め込まれており、すべてのデータは PostgreSQL に保存されます。
 
-> **この版の言語についての注記。** このフォークは、製品を 5 つの言語 — **英語（デフォルト）、韓国語、中国語、スペイン語、日本語** — で利用できるようにし、設定で選べるようにしました。ユーザー向けの出力は選択した言語に強制される一方、エージェントの内部推論プロンプトはベンチマークされた性能を保つために原語のまま維持されます。出力言語が小さなコード固定のディレクティブによってどのように強制されるかは[設定](#設定)を参照してください。
+> **この版の言語についての注記。** このフォークは、製品を 5 つの言語 — **簡体字中国語（デフォルト）、英語、韓国語、スペイン語、日本語** — で利用できるようにし、設定で選べるようにしました。ユーザー向けの出力は選択した言語に強制される一方、エージェントの内部推論プロンプトはベンチマークされた性能を保つために原語のまま維持されます。出力言語が小さなコード固定のディレクティブによってどのように強制されるかは[設定](#設定)を参照してください。
 
 ---
 
@@ -53,18 +53,18 @@ ARTEX は、**自分が所有する標的、または明示的な書面による
 
 上流の ARTEX はプロンプト・UI・ドキュメントがすべて中国語になっており、中国語を読まない人にとっては結果を読んでチームと共有するのが面倒でした。この版は次のことを目指します。
 
-- **出力をローカライズする** — エージェントが人に提示する検出結果・事実の要約・最終レポート・チャット応答を、選択した言語（デフォルトは英語。韓国語・中国語・スペイン語・日本語が選択可能）に強制します。コマンド・ペイロード・コード・URL・生ログは分析に必要なので、原形のまま残します。
+- **出力をローカライズする** — エージェントが人に提示する検出結果・事実の要約・最終レポート・チャット応答を、選択した言語（デフォルトは簡体字中国語。英語・韓国語・スペイン語・日本語が選択可能）に強制します。コマンド・ペイロード・コード・URL・生ログは分析に必要なので、原形のまま残します。
 - **性能を保つ** — エージェントの判断を駆動する内部の推論プロンプト（行動指示の本体）は翻訳**しません**。原語でベンチマークされた挙動をそのまま保ち、出力言語だけを変えることで、翻訳が持ち込む品質のブレを避けます。
 - **法的な境界を明示する** — 「許可された範囲のみ」という警告を明確に述べ、あわせてネットワーク法・プライバシー法に関する韓国固有の告知（メンテナーは韓国に拠点があります）を添えます。あなたが活動する地域の法律も同様に適用されます。
 - **多様な LLM スタックに対応する** — LLM プロバイダをフロンティアモデルから任意の OpenAI 互換エンドポイント（国内モデルやオープンモデル）に差し替えられます。[設定](#設定)を参照してください。
 
-> この多言語版の境界と設計方針は、リポジトリの作業ノートにより詳しく記録されています。上流リポジトリとの差分(diff)を取りやすいように、オリジナルの中国語ドキュメントは [`README.zh.md`](README.zh.md) として保存してあります。
+> この多言語版の境界と設計方針は、リポジトリの作業ノートにより詳しく記録されています。上流リポジトリとの差分(diff)を取りやすいように、オリジナルの中国語 README は簡体字中国語の主文書 [`README.md`](README.md) に統合してあり、[`README.zh.md`](README.zh.md) はいまやそこを指す短い案内だけです。
 
 ---
 
 ## スクリーンショット
 
-下の 3 つの画面は、デフォルトの英語 UI です（設定で韓国語・中国語・スペイン語・日本語に切り替え可能）。データはローカルに隔離されたサンドボックスのもので、標的はすべて架空の `acme.com` とプライベートアドレス帯です。
+下の 3 つの画面は、英語 UI です（設定で簡体字中国語・韓国語・スペイン語・日本語に切り替え可能）。データはローカルに隔離されたサンドボックスのもので、標的はすべて架空の `acme.com` とプライベートアドレス帯です。
 
 <p align="center">
   <img src="screenshots/en/dashboard.png" width="900" alt="ダッシュボードの概要"><br>
@@ -74,7 +74,7 @@ ARTEX は、**自分が所有する標的、または明示的な書面による
 <p align="center">
   <img src="screenshots/en/findings.png" width="900" alt="検出結果の一覧"><br>
   <sub><b>検出結果</b> — 深刻度・ステータス・資産・担当タスクごとに集計され、CSV にエクスポートできます。</sub><br>
-  <sub>検出結果の<b>タイトル</b>はモデルが生成するため、標的アプリを反映して英語の技術用語が現れることがあります（[モデル選択と出力言語](#モデル選択と出力言語)）。各タイトルの下の説明と UI の残りの部分は英語（デフォルト。設定で切り替え可能）です。</sub>
+  <sub>検出結果の<b>タイトル</b>はモデルが生成するため、標的アプリを反映して英語の技術用語が現れることがあります（[モデル選択と出力言語](#モデル選択と出力言語)）。各タイトルの下の説明と UI の残りの部分は英語（ここで使っている表示言語。設定で切り替え可能）です。</sub>
 </p>
 
 <p align="center">
@@ -82,7 +82,7 @@ ARTEX は、**自分が所有する標的、または明示的な書面による
   <sub><b>チャット</b> — 自律実行の途中に人が割り込んでヒントを注入し、その間エージェントは攻撃チェーンを英語で要約します。</sub>
 </p>
 
-オリジナル（中国語 UI）の画面は [`README.zh.md`](README.zh.md#截图预览)（中国語 UI）で見られます。
+オリジナル（中国語 UI）の画面は [`README.md`](README.md#截图预览)（簡体字中国語の主文書）で見られます。
 
 ---
 
@@ -93,8 +93,8 @@ ARTEX は、**自分が所有する標的、または明示的な書面による
 > **イメージ:** `docker-compose.yml` の `artex` サービスは `ghcr.io/jiwoochris/artex-global` を取得します。これは、このリポジトリがリリースタグ（`v*`）ごとに GitHub Container Registry に公開するグローバル版のイメージです。デフォルトのタグは `latest`（最新リリース）です。特定のリリースに固定するには `.env` で `ARTEX_TAG` を設定してください。上流のオリジナルイメージ `autumn27/artex` は Docker Hub から取り下げられており、もう使われていません。
 
 ```bash
-git clone https://github.com/jiwoochris/artex-global.git
-cd artex-global
+git clone https://github.com/YangZiyueZY/artex-ko.git
+cd artex-ko
 cp .env.example .env          # set POSTGRES_PASSWORD; ANTHROPIC_API_KEY is optional
 docker compose up -d          # brings up the artex image + postgres together
 # → open http://localhost:8787 (on first visit, set the admin password at /setup)
@@ -105,7 +105,7 @@ docker compose up -d          # brings up the artex image + postgres together
 
 ### その他のインストール方法
 
-上流はいくつかの方法を提供しています。インストールスクリプト（`./install.sh`）、プリコンパイル済みバイナリ（Releases）、ソースからの単一バイナリビルドです。コマンドと手順の全体は [`README.zh.md`](README.zh.md#安装) の「安装」（インストール）の節（中国語）にまとめてありますが、要点を以下に再掲します。
+上流はいくつかの方法を提供しています。インストールスクリプト（`./install.sh`）、プリコンパイル済みバイナリ（Releases）、ソースからの単一バイナリビルドです。コマンドと手順の全体は [`README.md`](README.md#安装) の「安装」（インストール）の節（中国語）にまとめてありますが、要点を以下に再掲します。
 
 - **インストールスクリプト:** `./install.sh` を実行すると Docker を検出／インストールし、続いて「① すべて Docker で」または「② ローカルでコンパイルして実行」を選べます。「① すべて Docker で」は上記のクイックスタートと同じイメージ（`ghcr.io/jiwoochris/artex-global`）を取得して起動します。一方「② ローカルでコンパイルして実行」は、下記の **ソースからの単一バイナリビルド** と同じやり方で自分でビルドします。
 - **ソースからの単一バイナリビルド:**
@@ -139,7 +139,7 @@ docker compose up -d          # brings up the artex image + postgres together
 
 **LLM:** `export ANTHROPIC_API_KEY=sk-...`（または `OPENAI_API_KEY`）、あるいは UI の「LLM settings」ページで入力します。任意の環境変数: `ARTEX_LLM_PROVIDER` / `ARTEX_LLM_MODEL` / `ARTEX_LLM_BASE_URL` / `ARTEX_LLM_PROXY`。国内モデルやオープンモデルを使うには、`ARTEX_LLM_BASE_URL` を OpenAI 互換エンドポイントに向けてください。
 
-**出力言語:** この版は、各ロールの system prompt に付加される小さなコード固定のディレクティブによって、ユーザー向けの出力を選択した言語（デフォルトは英語）に強制します（推論の本体は翻訳しません）。設定で言語を切り替えるか、`agent/prompt.go`（`langDirective`）でそのディレクティブを調整してください。
+**出力言語:** この版は、各ロールの system prompt に付加される小さなコード固定のディレクティブによって、ユーザー向けの出力を選択した言語（デフォルトは簡体字中国語）に強制します（推論の本体は翻訳しません）。設定で言語を切り替えるか、`agent/prompt.go`（`langDirective`）でそのディレクティブを調整してください。
 
 **並行度:** タスクごとに生成されるワーカーエージェントの数は「System settings」で調整できます（デフォルトは 3）。
 
@@ -159,7 +159,7 @@ docker compose up -d          # brings up the artex image + postgres together
 
 管理者アカウントは単一（`ARTEX`）で、そのパスワードは初回アクセス時に `/setup` で作成されます。まだ初期化されていないインスタンスに最初に到達した者がそれを横取りできないよう、次の保護が適用されます。
 
-- **セットアップトークン。** サーバーがパスワードなしで起動すると、`[auth] … Setup token: …` という 1 行をコンソール（デフォルト言語が英語のため、ログも英語で出力されます。Docker では `docker compose logs artex`）に出力します。`/setup` と `POST /api/auth/init`（`setup_token` フィールド）は、その値が一致したときにのみパスワードを作成し、誤った試行はレート制限されます。無人デプロイでは `ARTEX_SETUP_TOKEN` で固定するか、`ARTEX_ADMIN_PASSWORD`（8 文字以上）で直接パスワードを設定してください。
+- **セットアップトークン。** サーバーがパスワードなしで起動すると、`[auth] … Setup token: …` という 1 行をコンソール（Docker では `docker compose logs artex`）に出力します。`/setup` と `POST /api/auth/init`（`setup_token` フィールド）は、その値が一致したときにのみパスワードを作成し、誤った試行はレート制限されます。無人デプロイでは `ARTEX_SETUP_TOKEN` で固定するか、`ARTEX_ADMIN_PASSWORD`（8 文字以上）で直接パスワードを設定してください。
 - **デフォルトで 127.0.0.1 にバインドします。** `artex` の `-addr` のデフォルトも、`docker-compose.yml` でのポート公開も、ループバックインターフェースのみを開きます。他のマシンから到達するには `-addr :8787` か、`.env` の `ARTEX_BIND=0.0.0.0` を使いますが、まず初期セットアップを済ませ、下記のリバースプロキシ構成を優先してください。ループバック以外のアドレスでパスワードなしに起動すると、警告がログに出ます。
 - **パスワードを変えるとすべてのセッションが終了します。** トークンの署名鍵はパスワードのハッシュに紐づいているため、変更前（UI、`reset-password.sh`、または DB の直接編集による）に発行されたトークンは数秒以内に使えなくなります。侵害されたアカウントから復旧する際は、パスワードを変えたあと、カスタムツール・MCP・LLM・通知の設定も見直してください。
 - **CORS。** `/api` は、`ARTEX_CORS_ORIGINS`（カンマ区切り）に列挙されたオリジンからのクロスオリジンのブラウザ呼び出しにのみ応答します。埋め込み UI は同一オリジンなので、これは通常は空です。デフォルトでは `dev.sh` からの `next dev`（`http://localhost:5173`）のみを許可します。
@@ -168,7 +168,7 @@ docker compose up -d          # brings up the artex image + postgres together
 
 フロントエンドと API/SSE はどちらも同じバックエンドポート（デフォルト `:8787`）が提供し、ライブのアクティビティストリームはデフォルトで **同一オリジン** に接続します。そのため `NEXT_PUBLIC_SSE_BASE` を別途設定する必要はありません。公開ネットワークには 443 だけを公開し、8787 は内部に留めてください。
 
-SSE は長時間の接続を保持してイベントを送り続けるので、リバースプロキシで **バッファリングを必ず無効化** してください。無効化しないと、ブラウザは接続してもイベントを受け取れません（アクティビティストリームが読み込み中のまま止まって見えます）。Nginx の設定例は [`README.zh.md`](README.zh.md#反向代理部署https--只开放-443) にあります。
+SSE は長時間の接続を保持してイベントを送り続けるので、リバースプロキシで **バッファリングを必ず無効化** してください。無効化しないと、ブラウザは接続してもイベントを受け取れません（アクティビティストリームが読み込み中のまま止まって見えます）。Nginx の設定例は [`README.md`](README.md#反向代理部署https--只开放-443) にあります。
 
 ---
 
@@ -373,7 +373,7 @@ flowchart TB
 - テスト: `go test ./...`
 - モックプレビュー（バックエンドなし）: `cd web && NEXT_PUBLIC_MOCK=1 npm run dev`
 
-その他の開発トピック（手動での脆弱性の再検証など）については、[`README.zh.md`](README.zh.md#开发) の「开发」（開発）の節を参照してください。
+その他の開発トピック（手動での脆弱性の再検証など）については、[`README.md`](README.md#开发) の「开发」（開発）の節を参照してください。
 
 このグローバル版が上流の ARTEX に加えた変更は、[変更履歴 (CHANGELOG.en.md)](CHANGELOG.en.md) に記録されています。
 
@@ -407,6 +407,7 @@ flowchart TB
 ## 上流プロジェクト
 
 - 上流リポジトリ: [Autumn-27/ARTEX](https://github.com/Autumn-27/ARTEX)（現在アクセス不可、2026-10 確認）
-- オリジナル README（中国語）: [README.zh.md](README.zh.md)
+- オリジナル README（中国語）: 簡体字中国語の主文書 [README.md](README.md) に統合済み。[README.zh.md](README.zh.md) はそこを指す短い案内のみ
 - オリジナルのオンラインデモ（中国語 UI）: [https://artex-demo.vercel.app/](https://artex-demo.vercel.app/)（現在アクセス不可、2026-10 確認）
 - エージェント SDK: [Autumn-27/norma](https://github.com/Autumn-27/norma)（現在アクセス不可、2026-10 確認）
+- このリポジトリ（簡体字中国語ディストリビューション・フォーク）: [YangZiyueZY/artex-ko](https://github.com/YangZiyueZY/artex-ko) — グローバル版 [jiwoochris/artex-global](https://github.com/jiwoochris/artex-global)（韓国を拠点とするメンテナー）のフォークで、イメージは GitHub Container Registry（`ghcr.io/jiwoochris/artex-global`）に公開されています
