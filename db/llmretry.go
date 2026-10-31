@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// LLM 重试策略：五层重试的「次数 + 间隔」全局配置，见 docs/LLM重试设计.md。
+// LLM 重试策略：各层重试的「次数 + 间隔」全局配置，见 docs/LLM重试设计.md。
 // 存在 settings 表的一个 JSON 值里 —— 它是整机一份的运行参数，不值得为它开一张表；
 // 读取走内置默认兜底，所以键不存在(全新库/从未配置过)时行为与写死常量时代完全一致。
 
@@ -76,9 +76,9 @@ func (o RetryOverride) Clamped() RetryOverride {
 	return o
 }
 
-// LLMRetryPolicy holds the五层 retry configuration. Connect/Empty/Stream are the
-// per-request layers (a profile may override them, see LLMProfile.Retry);
-// Breaker and Intent are process-wide by nature and live only here.
+// LLMRetryPolicy holds the per-layer retry configuration. Connect/Empty/Stream are
+// the per-request layers (a profile may override them, see LLMProfile.Retry);
+// Breaker、Intent、Requeue 是进程级的，只存全局一份。
 type LLMRetryPolicy struct {
 	// Connect：SDK 建连重试(连接重置/超时/429/5xx，流开始前)。默认 3 次、指数退避。
 	Connect RetryRule `json:"connect"`
@@ -89,14 +89,20 @@ type LLMRetryPolicy struct {
 	// Breaker：轮询熔断。Attempts=连续几次瞬时失败触发熔断(默认 3，-1=瞬时失败不熔断，
 	// 硬失败如余额不足/密钥失效仍立即熔断)；IntervalMS=固定冷却时长(0=默认 1/5/30min 梯度)。
 	Breaker RetryRule `json:"breaker"`
-	// Intent：worker 以 model_error 收场后的整条意图重跑。默认 2 次、固定 3s。
+	// Intent：worker 以 model_error 收场后的整条意图原地重跑。默认 5 次、3s 起指数退避(封顶 60s)。
 	Intent RetryRule `json:"intent"`
+	// Requeue：模型错误码重试的「延迟重排」层。失败属于外部可恢复(网络抖动/限流/
+	// 供应商 5xx/额度耗尽)且 Intent 层已用尽时，不把意图判成 blocked，而是退回 open、
+	// 隔一段时间由 worker 重新领取，任务全程不中断。
+	// Attempts=最多重排几次(默认 4；-1=关闭这层，失败即判 blocked)；
+	// IntervalMS=每次重排等待(0=默认 1min→2min→4min…封顶 10min；>0=固定间隔)。
+	Requeue RetryRule `json:"requeue"`
 }
 
 // Clamped returns the policy with every rule clamped.
 func (p LLMRetryPolicy) Clamped() LLMRetryPolicy {
 	p.Connect, p.Empty, p.Stream = p.Connect.Clamped(), p.Empty.Clamped(), p.Stream.Clamped()
-	p.Breaker, p.Intent = p.Breaker.Clamped(), p.Intent.Clamped()
+	p.Breaker, p.Intent, p.Requeue = p.Breaker.Clamped(), p.Intent.Clamped(), p.Requeue.Clamped()
 	return p
 }
 

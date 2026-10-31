@@ -1077,12 +1077,15 @@ export interface LLMRetryOverride {
   stream: LLMRetryRule; // 同 provider 安全窗口重试：未交付输出前的断流重放
 }
 
-// 全局策略 = 上面三层的默认值 + 两层只有全局的：
+// 全局策略 = 上面三层的默认值 + 三层只有全局的：
 //   breaker 轮询熔断（attempts=连续几次瞬时失败熔断，interval_ms=固定冷却时长）
-//   intent  意图重跑（worker 以 model_error 收场后整条意图重跑）
+//   intent  意图重跑（worker 以 model_error 收场后整条意图原地重跑，指数退避）
+//   requeue 延迟重排（外部可恢复的模型错误不把意图判死：退回 open，隔一段时间
+//           自动重试，任务全程不中断；attempts=最多几次，interval_ms=每次等待）
 export interface LLMRetryPolicy extends LLMRetryOverride {
   breaker: LLMRetryRule;
   intent: LLMRetryRule;
+  requeue: LLMRetryRule;
 }
 
 // ---- LLM 轮询（故障转移）----

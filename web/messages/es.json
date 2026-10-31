@@ -3460,11 +3460,21 @@
         "title": "Re-ejecución de intención",
         "where": "Este proyecto · por proceso, uno global",
         "trigger": "Cuando las capas anteriores no lo detuvieron: un worker termina en model_error. O bien los reintentos internos están todos agotados, o el stream se cayó después de haber empezado a entregar salida (entonces reproducir no es seguro y hay que ejecutar todo de nuevo).",
-        "skips": "El agotamiento de cuota ya lo gestiona la rotación cambiando de perfil, así que no se re-ejecuta aquí. Cuando una tarea entra en pausa / parada / cierre, cede de inmediato y no ocupa tiempo de backoff.",
-        "desc": "Ejecuta de nuevo toda la intención desde el principio. Al ser la capa más externa, una sola re-ejecución multiplica una vez más los números de todas las capas internas.",
+        "skips": "Se clasifica por código de error: solo se re-ejecutan en el sitio los fallos externamente recuperables (fluctuaciones de red, tiempos de espera, HTTP 408 / 429 / 5xx y errores irreconocibles). El agotamiento de cuota, los fallos de autenticación, los errores de parámetros y el exceso de contexto no se re-ejecutan aquí.",
+        "desc": "Vuelve a ejecutar toda la intención desde el principio, con un backoff 3s→6s→12s→24s→48s (máx. 60s cada espera). Una sola re-ejecución multiplica otra vez los números de todas las capas internas, así que conviene no fijar un número alto.",
         "attemptsLabel": "Número de re-ejecuciones",
-        "defInterval": "Fijo 3s",
-        "offHint": "-1 = no re-ejecutar; marcar la intención como blocked de inmediato"
+        "defInterval": "Exponencial desde 3s (máx. 60s)",
+        "offHint": "-1 = no re-ejecutar; pasar al reencolado diferido o marcar blocked"
+      },
+      "requeue": {
+        "title": "Reencolado diferido",
+        "where": "Este proyecto · por proceso, uno global",
+        "trigger": "La re-ejecución de intención tampoco lo detuvo y el error es externamente recuperable: fluctuaciones de red, límite de peticiones (429), 5xx del proveedor o agotamiento de cuota / saldo (incluido que todos los perfiles se agoten y la cadena de rotación quede vacía).",
+        "skips": "No se reencolan los fallos de autenticación (401 / 403), los errores de parámetros o de nombre de modelo (400 / 404 / 422) ni el exceso de contexto (413 / context length): reintentar no los mejora. Tampoco cuando la tarea queda en pausa / parada / eliminada o entra en el cierre por tiempo de espera.",
+        "desc": "No declara la intención blocked: primero la devuelve a open y le pone una «barrera de reasignación» durante un rato; al vencerla, el worker la vuelve a tomar de forma automática y la tarea no se interrumpe en ningún momento. Se conservan lo ya ejecutado y los hechos ya registrados. La escala de espera es 1min→2min→4min→8min (máx. 10min cada espera).",
+        "attemptsLabel": "Máximo de reencolados",
+        "defInterval": "Duplicado desde 1min (máx. 10min)",
+        "offHint": "-1 = desactivar esta capa; agotadas las re-ejecuciones, marcar blocked"
       }
     },
     "retry": {
@@ -3477,10 +3487,10 @@
       "emptyLine": "Déjelo vacío para usar el valor por defecto. {hint}.",
       "override": {
         "label": "Anulación de reintentos",
-        "hint": "Se aplica solo a este perfil y anula los valores por defecto globales de «Reintentos y backoff». Deje un campo vacío para seguir el valor global. Ponga -1 en el número para desactivar los reintentos de esta capa. Rellene un intervalo para usar un intervalo fijo en lugar del backoff exponencial. El corte de circuito y la re-ejecución de intención son por proceso, así que solo se pueden ajustar en la página global."
+        "hint": "Se aplica solo a este perfil y anula los valores por defecto globales de «Reintentos y backoff». Deje un campo vacío para seguir el valor global. Ponga -1 en el número para desactivar los reintentos de esta capa. Rellene un intervalo para usar un intervalo fijo en lugar del backoff exponencial. El corte de circuito, la re-ejecución de intención y el reencolado diferido son por proceso, así que solo se pueden ajustar en la página global."
       },
       "loading": "Cargando la política de reintentos…",
-      "intro": "El fallo de una llamada al modelo pasa por cinco capas de reintento en orden de dentro hacia fuera: <chain>conexión → respuesta vacía → ventana segura del mismo provider → corte de circuito de rotación → re-ejecución de intención</chain>. El turno de una capa exterior llega solo cuando la interior se agota, así que los números <emph>se multiplican entre sí</emph>. Si lleva cada capa al máximo, un solo contratiempo puede quemar decenas de solicitudes. Dejarlas todas vacías es el valor por defecto actual, exactamente el comportamiento de cuando esta página no existía. Las tres primeras capas se pueden anular por separado en cada perfil de modelo.",
+      "intro": "El fallo de una llamada al modelo pasa por seis capas de reintento en orden de dentro hacia fuera: <chain>conexión → respuesta vacía → ventana segura del mismo provider → corte de circuito de rotación → re-ejecución de intención → reencolado diferido</chain>. El turno de una capa exterior llega solo cuando la interior se agota, así que los números <emph>se multiplican entre sí</emph>. Si lleva cada capa al máximo, un solo contratiempo puede quemar decenas de solicitudes. Dejarlas todas vacías es el valor por defecto actual, exactamente el comportamiento de cuando esta página no existía. Las tres primeras capas se pueden anular por separado en cada perfil de modelo.",
       "save": "Guardar",
       "resetAll": "Restablecer todo a los valores por defecto",
       "toast": {

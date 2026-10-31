@@ -155,6 +155,18 @@ The output-language enforcement is **driven by a prompt directive (`langDirectiv
 
 > **Token-cap pitfall on the OpenAI-compatible path.** OpenAI-family models such as `gpt-4o` cap response tokens at 16,384. OpenAI-compatible requests, however, carry a larger default output cap (32,768), so leaving it unchanged makes every call fail with `400 (max_tokens is too large)`. In that case, **set that profile's `max_tokens` to 16,384 or lower on the LLM settings page.** Anthropic-family models (including the default `claude-opus-4-8`) allow 32,768 and do not hit this pitfall.
 
+### Automatic retry on model errors (without interrupting the task)
+
+When the model endpoint is flaky (connection reset, read/write timeouts, 429 rate limiting, provider 5xx, temporarily exhausted quota), the task is **not interrupted outright**; instead errors are graded by code and retried automatically in two stages:
+
+1. **Intent re-run (layer ⑤).** Recoverable transient errors are first re-run on the same intent, backing off 3s→6s→12s→24s→48s (60s cap per wait, 5 attempts by default).
+2. **Delayed re-queue (layer ⑥).** Once the re-runs are used up, if the error is still externally recoverable (now including quota/balance exhaustion and an exhausted rotation chain), the intent is **returned to the pending state** with a wait: 1min→2min→4min→8min (10min cap per wait, 4 times by default), after which a worker claims it again automatically. The planner/worker loop never stops, and the execution log shows that the model call failed (e.g. HTTP 503) and that an automatic retry is scheduled (attempt 2/4).
+
+- **Errors that are not retried:** authentication failures (401/403), bad parameters or model names (400/404/422), and context overflow (413 / context length) — retrying won't make them better. These still mark the intent as `blocked` (or hand it to context compaction) with the reason written into the execution log, as before.
+- **Total wait budget:** about 1.5 minutes by default (re-runs) + 15 minutes (delayed re-queue); only when that is exhausted is the intent marked `blocked`. Retrying stops immediately when the task is paused, stopped, deleted, or enters timeout wrap-up.
+- **Adjustable:** System settings → Model settings → Retry & backoff lets you change the count and interval of the two layers — intent re-run and delayed re-queue (0 = built-in default, -1 = disable that layer, >0 = fixed interval); the other layers (connection / empty response / same-provider safe window / rotation circuit breaker) keep their semantics.
+- **No duplicated work:** a retry reuses the same intent's session and the facts already written back, so completed tool calls are not repeated. If the model configuration itself is wrong (key, model name, balance), fix it in the settings page or pause the task manually.
+
 ### First-run protection (setup token and bind address)
 
 There is a single admin account (`ARTEX`) whose password is created on the first visit at `/setup`. So that whoever reaches a not-yet-initialised instance first cannot claim it, the following protections apply.

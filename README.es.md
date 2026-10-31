@@ -155,6 +155,18 @@ La imposición del idioma de salida está **guiada por una directiva del prompt 
 
 > **Trampa del límite de tokens en la ruta compatible con OpenAI.** Los modelos de la familia OpenAI como `gpt-4o` limitan los tokens de respuesta a 16 384. Las solicitudes compatibles con OpenAI, sin embargo, llevan un límite de salida predeterminado mayor (32 768), de modo que dejarlo sin cambios hace que cada llamada falle con `400 (max_tokens is too large)`. En ese caso, **establezca el `max_tokens` de ese perfil en 16 384 o menos en la página de LLM settings.** Los modelos de la familia Anthropic (incluido el predeterminado `claude-opus-4-8`) permiten 32 768 y no caen en esta trampa.
 
+### Reintento automático ante errores del modelo (sin interrumpir la tarea)
+
+Cuando el endpoint del modelo se vuelve inestable (reinicio de conexión, tiempos de espera de lectura/escritura, límite de 429, 5xx del proveedor, cuota agotada temporalmente), la tarea **no se interrumpe de inmediato**; en su lugar, el error se clasifica por código y se reintenta automáticamente en dos etapas:
+
+1. **Re-ejecución de intención (capa ⑤).** Los errores transitorios recuperables se reintentan primero sobre la misma intención, con un backoff de 3s→6s→12s→24s→48s (tope de 60s por espera, 5 intentos por defecto).
+2. **Reencolado diferido (capa ⑥).** Cuando se agotan las re-ejecuciones, si el error sigue siendo recuperable desde fuera (ahora también el agotamiento de cuota/saldo y la cadena de rotación agotada), la intención **vuelve al estado pendiente** con una espera (1min→2min→4min→8min, tope de 10min por espera, 4 veces por defecto); al vencer, un worker la toma de nuevo automáticamente. El bucle planner/worker no se detiene en ningún momento y en el registro de ejecución se ve que la llamada al modelo falló (p. ej. HTTP 503) y que hay un reintento automático programado (intento 2/4).
+
+- **Errores que no se reintentan:** fallos de autenticación (401/403), errores de parámetros o de nombre de modelo (400/404/422) y desbordamiento de contexto (413 / context length): reintentar no los mejora. Estos siguen marcando la intención como `blocked` (o se pasa a la compactación de contexto) y escriben el motivo en el registro de ejecución, igual que antes.
+- **Presupuesto total de espera:** por defecto unos 1,5 minutos (re-ejecuciones) + 15 minutos (reencolado diferido); solo al agotarse se marca `blocked`. El reintento se detiene de inmediato si la tarea se pausa, se detiene, se elimina o entra en el cierre por tiempo de espera.
+- **Ajustable:** en Configuración del sistema → Ajustes del modelo → Reintentos y backoff puede cambiar el número y el intervalo de las dos capas — re-ejecución de intención y reencolado diferido (0 = valor predeterminado integrado, -1 = desactivar esa capa, >0 = intervalo fijo); las demás capas (conexión / respuesta vacía / ventana segura del mismo provider / corte de circuito de rotación) conservan su semántica.
+- **Sin ejecuciones duplicadas:** el reintento reutiliza la sesión de la misma intención y los hechos ya registrados, así que no repite las llamadas a herramientas ya completadas. Si la configuración del modelo es errónea (clave, nombre del modelo, saldo), corríjala en la página de ajustes o pause la tarea manualmente.
+
 ### Protección en el primer arranque (token de configuración y dirección de enlace)
 
 Hay una única cuenta de administrador (`ARTEX`) cuya contraseña se crea en la primera visita en `/setup`. Para que quien llegue primero a una instancia aún no inicializada no pueda apropiársela, se aplican las siguientes protecciones.

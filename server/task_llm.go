@@ -432,23 +432,9 @@ func isRetryableStreamError(err error) bool {
 	if err == nil {
 		return false
 	}
-	if isQuotaExhaustedError(err) {
-		return false
-	}
-	s := strings.ToLower(err.Error())
-	if strings.Contains(s, "too long") || strings.Contains(s, "context length") ||
-		strings.Contains(s, "context_length") || strings.Contains(s, "maximum context") ||
-		strings.Contains(s, "status 413") {
-		return false
-	}
-	for _, code := range []string{"status 400", "status 401", "status 403", "status 404", "status 422"} {
-		if strings.Contains(s, code) {
-			return false
-		}
-	}
-	// 其余(传输 reset/EOF/timeout、408/429/5xx、流内 error 事件如 anthropic
-	// overloaded_error 等)一律视为瞬时,允许重试。
-	return true
+	// 判定统一走 classifyLLMError（见 server/llmerror.go）：同一批错误文本只有一处
+	// 模式匹配，日后不会两处走偏。
+	return classifyLLMError(err).streamRetryable()
 }
 
 // CompactionWindow mirrors current()'s precedence so the context window always

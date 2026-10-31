@@ -65,14 +65,11 @@ func preview(s string, n int) string {
 }
 
 // model_error（provider/API 故障：LLM 层瞬时重试耗尽，或流已开始后中途断流）
-// 收场的 work 不是「试过没做完」也不是真失败，而是外部抖动。默认把它当永久
-// blocked 会白丢一条意图，所以这里对该终态额外重跑几次，每次之间退避一下，给
-// provider 恢复的时间；重试期间若被暂停/终止/取消则立即让位给对应分支处理。
-const (
-	modelErrorRetries      = 2               // model_error 收场后额外重试的次数
-	modelErrorRetryBackoff = 3 * time.Second // 每次重试前的退避
-	workControlWaitTimeout = 30 * time.Second
-)
+// 收场的 work 不是「试过没做完」也不是真失败，而是外部抖动。直接判 blocked 会白丢
+// 一条意图、进而让任务停摆，因此按错误码分级兜底：先原地指数退避重跑（参数见
+// server/llmretry.go 的 modelErrorRetry*），仍失败且属于外部可恢复错误时，退回 open
+// 延迟重排（见 server/modelretry.go）；重试期间若被暂停/终止/取消则立即让位。
+const workControlWaitTimeout = 30 * time.Second
 
 var errWorkControlConflict = errors.New("work control conflict")
 
@@ -92,11 +89,22 @@ const (
 	errDetachedWorkerNotReady      = "Worker 尚未就绪"
 )
 
-// retryableWorkerModelError excludes errors already handled by the task router.
-// In particular, a quota error after partial streaming advances the task cursor
-// for the next LLM call but must not replay this whole intent on the backup.
+// retryableWorkerModelError 决定一条意图能否在原地「立刻重跑」。只有外部瞬时故障
+// （网络抖动、超时、限流、供应商 5xx）值得原地重跑；额度耗尽/鉴权失败/参数错误/
+// 上下文超长重跑也没用（额度那种交给延迟重排或换配置）。
+// 任务路由层已接管的失败（流已交付输出）不能重放：重放会重复输出、重复执行工具。
+// 无法识别的错误保留历史的「先重试」行为，由次数上限兜底。
 func retryableWorkerModelError(reason harness.TerminalReason, err error) bool {
-	return reason == harness.ReasonModelError && !isTaskLLMRuntimeError(err)
+	if reason != harness.ReasonModelError {
+		return false
+	}
+	if err == nil {
+		return true
+	}
+	if isTaskLLMRuntimeError(err) {
+		return false
+	}
+	return classifyLLMError(err).Immediate
 }
 
 // Engine drives the event-driven exploration loop with real LLM agents
@@ -149,6 +157,12 @@ type Engine struct {
 	// the message to the model (blocking that call) so it re-plans — no kill needed.
 	steerMu  sync.Mutex
 	steerBox map[int64][]string
+
+	// 模型错误码重试（见 server/modelretry.go）：每条意图已用掉几次延迟重排，以及
+	// 「在此时刻之前不要重新领取」的栅栏（intentID → claimHoldEntry）。进程内保存，
+	// 重启后清零重来；任务 teardown 时按 taskID 清理。
+	retryState sync.Map
+	claimHold  sync.Map
 
 	plannerRound sync.Map // taskID -> int, planner round counter (for UI round separators)
 
@@ -301,6 +315,7 @@ func (e *Engine) StopTask(taskID string) {
 	e.stamped.Delete(taskID)
 	e.inflight.Delete(taskID)
 	e.coordStarted.Delete(taskID)
+	e.forgetTaskModelRetry(taskID)
 	e.deleteMu.Lock()
 	e.deleting.Delete(taskID)
 	e.deleteMu.Unlock()
@@ -575,7 +590,7 @@ const defaultEmptyTurnNudges = 2
 
 // emptyTurnNudge 是空转回合注入的续跑指令。
 //
-// 这种回合在 harness 眼里是一次自然结束(stop_reason=end_turn 且无 tool_use)，五层
+// 这种回合在 harness 眼里是一次自然结束(stop_reason=end_turn 且无 tool_use)，六层
 // LLM 重试一层都不适用——它不是错误，是模型「想完了但没动手」。SDK 的空响应重试也
 // 够不着:它以「有没有 yield 过事件」判空，而思考增量本身就是事件(norma/llm/openai.go
 // 的 SEThinkingDelta)，所以 thinking-only 不算空。何况那层是原样重发整个 prompt，
@@ -1062,13 +1077,14 @@ func (e *Engine) runIntent(ctx context.Context, t *Task, name string, worker *ag
 	// model_error 收场 → 额外重跑几次（退避后再试）。仅在意图仍属本 work、任务
 	// 未暂停/未终止/未取消【且未进入收尾】时重试；否则让位给对应分支处理(收尾期不
 	// 再重试,避免退避挤占其他 worker 的优雅收尾窗口)。
-	maxRetries, retryBackoff := e.modelErrorRetryPolicy()
+	maxRetries, retryBase, retryCap := e.modelErrorRetryPolicy()
 	for attempt := 1; attempt <= maxRetries &&
 		retryableWorkerModelError(reason, err) &&
 		workCtx.Err() == nil && ectx.Err() == nil && !e.IsPaused(t.ID) && !e.isSettling(t.ID); attempt++ {
-		log.Printf("[worker %s] task %s 意图 #%d model_error 收场，%v 后重试 (%d/%d)",
-			name, t.ID, intent.ID, retryBackoff, attempt, maxRetries)
-		if sleepCtx(workCtx, retryBackoff) {
+		retryIn := modelErrorRetryBackoff(attempt, retryBase, retryCap)
+		log.Printf("[worker %s] task %s 意图 #%d model_error 收场（%s），%s 后重试 (%d/%d)",
+			name, t.ID, intent.ID, classifyLLMError(err).Summary, retryIn, attempt, maxRetries)
+		if sleepCtx(workCtx, retryIn) {
 			break // 退避期间被取消（终止/暂停）→ 交给下方分支处理
 		}
 		e.BeginLLMCall(t.ID)
@@ -1165,6 +1181,14 @@ func (e *Engine) runIntent(ctx context.Context, t *Task, name string, worker *ag
 	if err != nil {
 		log.Printf("[worker %s] intent %d: %v", name, intent.ID, err)
 	}
+	// 外部可恢复的模型错误（网络抖动/限流/供应商 5xx/额度耗尽）：原地重跑用尽后不把
+	// 意图判死，而是退回 open + 领取栅栏，到点自动重新领取（见 server/modelretry.go）。
+	// 走到这里时暂停/终止/取消/收尾/删除/planner kill 都已各自 return，无需重复判断。
+	if e.maybeRequeueModelError(t, intent, name, err, reason, killed, action) {
+		e.touch(t.ID)
+		return true
+	}
+	e.clearModelRetryState(intent.ID)
 	// terminal分流：撞步数上限 ≠ 完成。max_turns→exhausted（规划者据此知道这个方向
 	// 试过但没真正做完、需换角度，而非当成已覆盖永久跳过）；出错→blocked；正常→done。
 	state := "done"
@@ -1274,7 +1298,11 @@ func sleepCtx(ctx context.Context, d time.Duration) (done bool) {
 func (e *Engine) claimNext(t *Task, name string) *db.Node {
 	fr, _ := t.Store.Frontier(20)
 	for _, in := range fr {
+		if !e.claimAllowed(in.ID) {
+			continue // 模型错误延迟重排中：领取栅栏未到期前跳过
+		}
 		if ok, _ := t.Store.ClaimIntent(in.ID, name); ok {
+			e.claimHold.Delete(in.ID)
 			return in
 		}
 	}

@@ -1,9 +1,10 @@
 "use client";
 
-// LLM 重试配置的共用件：五层重试各自的「次数 + 间隔」。
+// LLM 重试配置的共用件：六层重试各自的「次数 + 间隔」。
 //
-// 五层从内到外：建连(SDK) → 空响应(SDK) → 同 provider 安全窗口 → 轮询熔断 → 意图重跑。
-// 前三层跟着端点走，所以每个模型配置都能覆盖全局默认；后两层是进程级的，只有全局一份。
+// 六层从内到外：建连(SDK) → 空响应(SDK) → 同 provider 安全窗口 → 轮询熔断 →
+// 意图重跑 → 延迟重排。前三层跟着端点走，所以每个模型配置都能覆盖全局默认；
+// 后三层是进程级的，只有全局一份。
 //
 // 所有输入都遵循同一套「留空 = 不配置」语义，与后端 db.RetryRule 一致：
 //   次数   空/0 = 用内置默认 | -1 = 关闭这层重试 | >0 = 用这个次数
@@ -31,6 +32,7 @@ const ZERO_POLICY: LLMRetryPolicy = {
   ...ZERO_OVERRIDE,
   breaker: ZERO_RULE,
   intent: ZERO_RULE,
+  requeue: ZERO_RULE,
 };
 
 // 每层的「次数留空时的默认值」，仅用于输入框占位符。其余文案（标题 / 触发 / 说明等）
@@ -40,7 +42,8 @@ export const RETRY_LAYERS = {
   empty: { defAttempts: 2 },
   stream: { defAttempts: 2 },
   breaker: { defAttempts: 3 },
-  intent: { defAttempts: 2 },
+  intent: { defAttempts: 5 },
+  requeue: { defAttempts: 4 },
 } satisfies Record<string, { defAttempts: number }>;
 
 type LayerKey = keyof typeof RETRY_LAYERS;
@@ -197,7 +200,7 @@ export function ProfileRetryFields({
   );
 }
 
-/** 「重试与退避」tab：五层的全局默认值。 */
+/** 「重试与退避」tab：六层的全局默认值。 */
 export function RetryPolicyPanel() {
   const t = useTranslations("llmPage");
   const [policy, setPolicy] = React.useState<LLMRetryPolicy>(ZERO_POLICY);

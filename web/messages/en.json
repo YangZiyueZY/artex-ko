@@ -3460,11 +3460,21 @@
         "title": "Intent re-run",
         "where": "This project · per process, one global instance",
         "trigger": "When the earlier layers couldn't stop it: a worker ends in model_error. Either the inner retries are all exhausted, or the stream dropped after it had already begun delivering output (replay isn't safe then, so the whole thing has to be run again).",
-        "skips": "Quota exhaustion is already handled by rotation switching profiles, so it isn't re-run here. When a task enters pause / stop / wrap-up, it yields immediately and doesn't take up backoff time.",
-        "desc": "Runs the entire intent again from the start. As the outermost layer, a single re-run multiplies the counts of all the inner layers once more.",
+        "skips": "Graded by error code: only externally recoverable failures (network jitter, timeouts, HTTP 408 / 429 / 5xx, and errors that can't be classified) are re-run in place. Quota exhaustion, authentication failures, bad parameters, and context overflow aren't re-run here.",
+        "desc": "Runs the entire intent again from the start, backing off 3s→6s→12s→24s→48s (max 60s per wait). A single re-run multiplies the counts of all the inner layers once more, so it's best not to set this number high.",
         "attemptsLabel": "Re-run count",
-        "defInterval": "Fixed 3s",
-        "offHint": "-1 = don't re-run; mark the intent as blocked right away"
+        "defInterval": "3s exponential (max 60s)",
+        "offHint": "-1 = don't re-run; hand it to the delayed re-queue or mark it as blocked"
+      },
+      "requeue": {
+        "title": "Delayed re-queue",
+        "where": "This project · per process, one global instance",
+        "trigger": "The intent re-run couldn't stop it either, and the error is externally recoverable: network jitter, rate limiting (429), provider 5xx, or quota / balance exhaustion (including every profile drained and the rotation chain coming up empty).",
+        "skips": "Authentication failures (401 / 403), bad-parameter or bad-model-name errors (400 / 404 / 422), and context overflow (413 / context length) are not re-queued, because retrying won't make them better. Nor are tasks that have been paused, stopped, or deleted, or that have entered their timeout wrap-up.",
+        "desc": "Doesn't mark the intent as blocked: it goes back to open with a short “claim fence”, and when the fence expires the worker picks it up again automatically, so the task is never interrupted. The run so far and the facts already written back are preserved. The wait ladder is 1min→2min→4min→8min (max 10min per wait).",
+        "attemptsLabel": "Max re-queues",
+        "defInterval": "1min doubling (max 10min)",
+        "offHint": "-1 = turn this layer off; once the re-runs are used up, mark the intent as blocked"
       }
     },
     "retry": {
@@ -3477,10 +3487,10 @@
       "emptyLine": "Leave empty to use the default. {hint}.",
       "override": {
         "label": "Retry override",
-        "hint": "Applies to this profile only, overriding the global defaults in \"Retry & backoff.\" Leave a field empty to follow the global value. Enter -1 for the count to turn off this layer's retries. Fill in an interval to use a fixed interval instead of exponential backoff. The circuit breaker and intent re-run are per process, so they can be adjusted only on the global page."
+        "hint": "Applies to this profile only, overriding the global defaults in \"Retry & backoff.\" Leave a field empty to follow the global value. Enter -1 for the count to turn off this layer's retries. Fill in an interval to use a fixed interval instead of exponential backoff. The circuit breaker, intent re-run, and delayed re-queue are per process, so they can be adjusted only on the global page."
       },
       "loading": "Loading retry policy…",
-      "intro": "A single model-call failure passes through five retry layers in order from innermost to outermost: <chain>connection → empty response → same-provider safe window → rotation circuit breaker → intent re-run</chain>. An outer layer's turn comes only after the inner one is used up, so the counts <emph>multiply together</emph>. Max out every layer and a single hiccup can burn dozens of requests. Leaving them all empty is the current default, exactly the behavior when this page didn't exist. The first three layers can be overridden individually on each model profile.",
+      "intro": "A single model-call failure passes through six retry layers in order from innermost to outermost: <chain>connection → empty response → same-provider safe window → rotation circuit breaker → intent re-run → delayed re-queue</chain>. An outer layer's turn comes only after the inner one is used up, so the counts <emph>multiply together</emph>. Max out every layer and a single hiccup can burn dozens of requests. Leaving them all empty is the current default, exactly the behavior when this page didn't exist. The first three layers can be overridden individually on each model profile.",
       "save": "Save",
       "resetAll": "Reset all to defaults",
       "toast": {
