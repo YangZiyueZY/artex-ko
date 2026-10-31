@@ -11,7 +11,7 @@ import (
 )
 
 // TestTaskTemplateErrorConstantsLocalized guards the F3b task-template bundle:
-// every user-facing string the task-template API returns must be Korean with no
+// every user-facing string the task-template API returns must be Simplified Chinese with no
 // leftover Chinese Han characters. The format constant is checked after
 // formatting so the %s/%d verbs resolve to a concrete message.
 func TestTaskTemplateErrorConstantsLocalized(t *testing.T) {
@@ -26,7 +26,7 @@ func TestTaskTemplateErrorConstantsLocalized(t *testing.T) {
 // TestTaskTemplateResponsesLocalized drives the real response paths that do not
 // touch the database: the body decoder rejects an oversized request, the field
 // validator rejects an over-length name, and writeTaskTemplateErr maps the
-// name-conflict sentinel to the Korean 409 body.
+// name-conflict sentinel to the Chinese 409 body.
 func TestTaskTemplateResponsesLocalized(t *testing.T) {
 	// decodeTaskTemplateRequest — MaxBytesReader errors on an oversized body
 	// before any DB access, so the 413 message is produced on its own.
@@ -43,7 +43,7 @@ func TestTaskTemplateResponsesLocalized(t *testing.T) {
 	assertChineseError(t, "too-large", decodeErrorField(t, rec.Body.Bytes()))
 
 	// validateTaskTemplateRequest — a name past the rune limit returns the
-	// Korean field-too-long error (surfaced via writeErr in the handlers).
+	// Chinese field-too-long error (surfaced via writeErr in the handlers).
 	longName := strings.Repeat("测", db.MaxTaskTemplateNameRunes+1)
 	err := validateTaskTemplateRequest(taskTemplateRequest{Name: &longName})
 	if err == nil {
@@ -51,7 +51,7 @@ func TestTaskTemplateResponsesLocalized(t *testing.T) {
 	}
 	assertChineseError(t, "name-too-long", err.Error())
 
-	// writeTaskTemplateErr — the name-conflict sentinel maps to the Korean 409.
+	// writeTaskTemplateErr — the name-conflict sentinel maps to the Chinese 409.
 	rec = httptest.NewRecorder()
 	writeTaskTemplateErr(rec, db.ErrTaskTemplateNameConflict)
 	if rec.Code != http.StatusConflict {

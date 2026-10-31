@@ -10,7 +10,7 @@ import (
 
 // TestSyncScopeSentryConstantsLocalized guards F3b (sync_scopesentry.go): every
 // user-facing message constant — surfaced either as a writeErr HTTP body or inside
-// the sync result's warnings/errors JSON arrays — must be Korean (Hangul present,
+// the sync result's warnings/errors JSON arrays — must be Simplified Chinese (Han present,
 // no Chinese Han). Reverting any literal to Chinese fails this test.
 func TestSyncScopeSentryConstantsLocalized(t *testing.T) {
 	cases := []struct {
@@ -88,7 +88,7 @@ func TestSyncScopeSentryFormattedLocalized(t *testing.T) {
 // TestSyncScopeSentryIngestParseErrorsLocalized runs ssIngest on malformed JSON for
 // each asset kind. The unmarshal failure returns before any store access, so this is
 // a real code path (nil AssetStore never dereferenced) that pins the parse-error
-// strings to Korean.
+// strings to Chinese.
 func TestSyncScopeSentryIngestParseErrorsLocalized(t *testing.T) {
 	s := &Server{}
 	bad := json.RawMessage("not json")

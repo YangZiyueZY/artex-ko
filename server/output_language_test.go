@@ -11,10 +11,8 @@ import (
 	"github.com/Autumn-27/artex/config"
 )
 
-// TestOutputLanguageCacheFollowsSettings pins that the cached output language
-// (read by every writeErr and label) is refreshed by PUT /api/settings, so a
-// switch applies to the very next response without re-reading the settings
-// table per message.
+// TestOutputLanguageCacheFollowsSettings 钉住缓存的输出语言（每次 writeErr 与标签都读它）
+// 会被 PUT /api/settings 刷新：切换后下一条响应即刻生效，不必每条消息都回查 settings 表。
 func TestOutputLanguageCacheFollowsSettings(t *testing.T) {
 	t.Setenv("ARTEX_LANG", "")
 	m, err := NewManager(t.TempDir(), "")
@@ -58,24 +56,38 @@ func TestOutputLanguageCacheFollowsSettings(t *testing.T) {
 		return v.Error
 	}
 
-	if got := s.outputLanguage(); got != "en" {
-		t.Fatalf("default output language = %q, want en", got)
+	if got := s.outputLanguage(); got != "zh" {
+		t.Fatalf("默认输出语言 = %q，期望 zh", got)
 	}
-	if got := errOf(do(http.MethodPut, "/api/settings", map[string]any{"output_language": "fr"})); got == errOutputLanguageInvalid || got == "" {
-		t.Fatalf("at the en default the error should be translated out of Korean, got %q", got)
+	// zh 默认：目录命中中文源文案本身（writeErr 走 trMsg，zh 直接回键）
+	if got := errOf(do(http.MethodPut, "/api/settings", map[string]any{"output_language": "fr"})); got != errOutputLanguageInvalid {
+		t.Fatalf("zh 默认应返回中文源文案 %q，实际 %q", errOutputLanguageInvalid, got)
 	}
 
 	if rec := do(http.MethodPut, "/api/settings", map[string]any{"output_language": "ko"}); rec.Code != http.StatusOK {
 		t.Fatalf("set ko status=%d body=%s", rec.Code, rec.Body.String())
 	}
-	if got := errOf(do(http.MethodPut, "/api/settings", map[string]any{"output_language": "fr"})); got != errOutputLanguageInvalid {
-		t.Fatalf("after switching to ko the error should be the Korean source %q, got %q", errOutputLanguageInvalid, got)
+	// 切到 ko：同一条错误必须换成韩语译文——既不再是中文键，也不能含汉字
+	if got := errOf(do(http.MethodPut, "/api/settings", map[string]any{"output_language": "fr"})); got == "" || got == errOutputLanguageInvalid {
+		t.Fatalf("切到 ko 后应返回韩语译文（不应等于中文源 %q），实际 %q", errOutputLanguageInvalid, got)
+	} else if !containsHangul(got) {
+		t.Fatalf("切到 ko 后的译文应含韩文，实际 %q", got)
 	}
 	var settings struct {
 		OutputLanguage string `json:"output_language"`
 	}
 	_ = json.Unmarshal(do(http.MethodGet, "/api/settings", nil).Body.Bytes(), &settings)
 	if settings.OutputLanguage != "ko" {
-		t.Fatalf("GET /api/settings output_language = %q, want ko", settings.OutputLanguage)
+		t.Fatalf("GET /api/settings output_language = %q，期望 ko", settings.OutputLanguage)
 	}
+}
+
+// containsHangul 判断字符串里是否含韩文音节（本文件仅用于“切到 ko 后应拿到韩语译文”的断言）。
+func containsHangul(s string) bool {
+	for _, r := range s {
+		if r >= 0xAC00 && r <= 0xD7A3 {
+			return true
+		}
+	}
+	return false
 }

@@ -178,7 +178,7 @@ func TestUploadSkillGBKNames(t *testing.T) {
 	}
 }
 
-// An archive we genuinely cannot decode should name the method in Korean instead of
+// An archive we genuinely cannot decode should name the method in Simplified Chinese instead of
 // surfacing "zip: unsupported compression algorithm".
 func TestUploadSkillUnsupportedMethod(t *testing.T) {
 	data := buildZip(t,
@@ -190,7 +190,7 @@ func TestUploadSkillUnsupportedMethod(t *testing.T) {
 	}
 	msg, _ := out["error"].(string)
 	if !strings.Contains(msg, "Deflate64") || !strings.Contains(msg, "不支持的压缩方式") {
-		t.Fatalf("error = %q, want a Korean message naming Deflate64", msg)
+		t.Fatalf("error = %q, want a Chinese message naming Deflate64", msg)
 	}
 }
 

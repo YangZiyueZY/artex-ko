@@ -8,7 +8,7 @@ import (
 )
 
 // TestAssetErrorConstantsLocalized pins that every user-facing writeErr literal
-// in task_assets.go and assets.go is Korean (Hangul present, no Chinese Han). If
+// in task_assets.go and assets.go is Simplified Chinese (Han present, no Hangul). If
 // anyone reverts one to Chinese, this fails.
 func TestAssetErrorConstantsLocalized(t *testing.T) {
 	cases := map[string]string{
@@ -37,7 +37,7 @@ func TestTaskAssetProvenanceLocalized(t *testing.T) {
 }
 
 // TestAssetResponsesLocalized drives the request validators that return before
-// any database access and confirms the Korean message actually lands in the HTTP
+// any database access and confirms the Chinese message actually lands in the HTTP
 // body. The scope/asset_ids conflict guard returns before s.m.Assets() is read,
 // MaxBytesReader trips mid-decode, and decodeCompanyMutationRequest works on the
 // body alone, so a Manager holding only the task map reaches every path.

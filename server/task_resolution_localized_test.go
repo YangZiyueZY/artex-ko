@@ -8,11 +8,11 @@ import (
 
 // TestTaskLLMResolutionLocalized guards F18: every user-facing reason/label that
 // GET /api/tasks/{id}/llm/resolution returns (rendered in the task LLM settings
-// chain / system/llm UI via resolutionLabel / the chain editor) must be Korean —
-// Hangul present, no Chinese Han. Source enum values and English fmt.Errorf wraps
+// chain / system/llm UI via resolutionLabel / the chain editor) must be Simplified Chinese —
+// Han present, no Hangul. Source enum values and English fmt.Errorf wraps
 // are out of scope and are not asserted here.
 func TestTaskLLMResolutionLocalized(t *testing.T) {
-	// 1) Every localized constant is Korean. Reverting any to Chinese fails this.
+	// 1) Every localized constant is Simplified Chinese. Reverting any to Chinese fails this.
 	for _, c := range []struct{ label, msg string }{
 		{"reasonLLMProfileMissing", reasonLLMProfileMissing},
 		{"reasonLLMProfileNoAPIKey", reasonLLMProfileNoAPIKey},

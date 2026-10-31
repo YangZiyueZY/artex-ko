@@ -272,13 +272,13 @@ func TestFallbackCommandParsing(t *testing.T) {
 	cases := []struct {
 		name, in, cmd, text string
 	}{
-		{"korean-intent", "意图 先检查 SQLi 注入点", "intent", "先检查 SQLi 注入点"},
-		{"korean-hint", "提示 先看登录表单", "hint", "先看登录表单"},
+		{"zh-intent", "意图 先检查 SQLi 注入点", "intent", "先检查 SQLi 注入点"},
+		{"zh-hint", "提示 先看登录表单", "hint", "先看登录表单"},
 				{"chinese-intent", "意图 扫描端口", "intent", "扫描端口"}, // 保留向后兼容
 				{"chinese-hint", "提示 看登录", "hint", "看登录"},     // 保留向后兼容
 		{"english-intent", "intent scan ports", "intent", "scan ports"},
 		{"english-hint", "hint try admin:admin", "hint", "try admin:admin"},
-		{"status-korean", "告诉我现在的情况", "", "告诉我现在的情况"},
+		{"status-zh", "告诉我现在的情况", "", "告诉我现在的情况"},
 		{"status-empty", "   ", "", ""},
 	}
 	for _, c := range cases {

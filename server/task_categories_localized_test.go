@@ -12,7 +12,7 @@ import (
 )
 
 // decodeErrorField pulls the "error" string out of a writeErr JSON body so the
-// Korean-ness of the user-facing message can be asserted.
+// Chinese-ness of the user-facing message can be asserted.
 func decodeErrorField(t *testing.T, body []byte) string {
 	t.Helper()
 	var resp struct {
@@ -25,7 +25,7 @@ func decodeErrorField(t *testing.T, body []byte) string {
 }
 
 // TestTaskCategoryErrorConstantsLocalized pins that every user-facing error
-// literal in task_categories.go is Korean (Hangul present, no Chinese Han). If
+// literal in task_categories.go is Simplified Chinese (Han present, no Hangul). If
 // anyone reverts one to Chinese, this fails.
 func TestTaskCategoryErrorConstantsLocalized(t *testing.T) {
 	cases := map[string]string{
@@ -42,7 +42,7 @@ func TestTaskCategoryErrorConstantsLocalized(t *testing.T) {
 }
 
 // TestTaskCategoryResponsesLocalized drives the validators that never touch the
-// database and confirms the Korean message actually lands in the HTTP body. The
+// database and confirms the Chinese message actually lands in the HTTP body. The
 // request decoder and id parser work on the body alone, writeTaskCategoryError
 // maps a db sentinel, and the batch-size guard returns before s.m is read.
 func TestTaskCategoryResponsesLocalized(t *testing.T) {
@@ -69,7 +69,7 @@ func TestTaskCategoryResponsesLocalized(t *testing.T) {
 	}
 	assertChineseError(t, "invalid-id", decodeErrorField(t, rec.Body.Bytes()))
 
-	// writeTaskCategoryError — the name-conflict sentinel maps to the Korean 409.
+	// writeTaskCategoryError — the name-conflict sentinel maps to the Chinese 409.
 	rec = httptest.NewRecorder()
 	writeTaskCategoryError(rec, db.ErrTaskCategoryNameConflict)
 	if rec.Code != http.StatusConflict {

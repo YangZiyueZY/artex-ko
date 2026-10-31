@@ -9,7 +9,7 @@ import (
 )
 
 // TestServerMgmtConstantsLocalized pins that every user-facing error/response
-// literal extracted from server_mgmt.go is Korean (Hangul present, no Chinese
+// literal extracted from server_mgmt.go is Simplified Chinese (Han present, no Chinese
 // Han). Reverting any one to Chinese makes assertChineseError fail on the Han
 // ideograph. assertChineseError / decodeErrorField are reused from the F3 suite
 // (same package server).
@@ -92,7 +92,7 @@ func TestServerMgmtSkillExistsSentinel(t *testing.T) {
 
 // TestServerMgmtPGGate503Localized exercises the real shared DB gate every
 // management handler passes through: with no PostgreSQL handle, pg() writes 503
-// and returns nil. The 503 body must be Korean.
+// and returns nil. The 503 body must be Simplified Chinese.
 func TestServerMgmtPGGate503Localized(t *testing.T) {
 	s := &Server{m: &Manager{}} // pg == nil
 	rec := httptest.NewRecorder()
@@ -142,7 +142,7 @@ func TestServerMgmtListModelsNoKeyLocalized(t *testing.T) {
 
 // TestServerMgmtValidateTemplateLocalized exercises the prompt-template editor
 // validator (pure function, no DB): both the parse-error and the
-// disallowed-variable branches must return Korean.
+// disallowed-variable branches must return Simplified Chinese.
 func TestServerMgmtValidateTemplateLocalized(t *testing.T) {
 	if msg := validateTemplate("{{", nil); msg == "" {
 		t.Fatal("损坏的模板必须返回错误文案")
@@ -160,7 +160,7 @@ func TestServerMgmtValidateTemplateLocalized(t *testing.T) {
 }
 
 // TestServerMgmtGlobalPromptVarsLocalized pins the template-variable catalog help
-// text (rendered in the prompt editor's variable palette) as Korean.
+// text (rendered in the prompt editor's variable palette) as Chinese.
 func TestServerMgmtGlobalPromptVarsLocalized(t *testing.T) {
 	if len(globalPromptVars) == 0 {
 		t.Fatal("globalPromptVars 为空")
