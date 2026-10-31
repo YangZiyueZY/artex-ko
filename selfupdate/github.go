@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
 )
 
 // Repo 是发布源。写死而不是做成配置项：更新源可配等于给任何能改配置的人一条
 // 远程代码执行通道，对一个渗透测试平台来说这个口子开不得。
-const Repo = "Autumn-27/artex"
+// 简体中文发行版从本仓库的 Release 取包（上游 Autumn-27/artex 仓库已不可访问）。
+const Repo = "YangZiyueZY/artex-ko"
 
 // latestURL 是 GitHub 的"最新正式版"接口。它会自动跳过 prerelease 和 draft。
 const latestURL = "https://api.github.com/repos/" + Repo + "/releases/latest"
@@ -122,10 +125,47 @@ func FetchLatest(ctx context.Context, c *http.Client) (*Release, error) {
 	return &rel, nil
 }
 
-// AssetName 返回当前平台对应的发布包名，与 build.sh 的 package_binary 保持一致：
-// artex-<版本>-<os>-<arch>.zip（版本号不带 v 前缀）。
-func AssetName(tag, goos, goarch string) string {
-	return fmt.Sprintf("artex-%s-%s-%s.zip", strings.TrimPrefix(tag, "v"), goos, goarch)
+// AssetName 返回某平台对应的发布包名，与 build.sh 的 package_binary 严格一致：
+// artex-<版本>-<os>-<arch>[v6|v7].zip（版本号不带 v 前缀；variant 只有 32 位 ARM 非空）。
+// 这里错一个字符，对应平台的一键更新就会在 Release 里找不到资产。
+func AssetName(tag, goos, goarch, variant string) string {
+	if goarch != "arm" {
+		variant = ""
+	}
+	return fmt.Sprintf("artex-%s-%s-%s%s.zip", strings.TrimPrefix(tag, "v"), goos, goarch, normalizeVariant(variant))
+}
+
+// BuildVariant 由构建脚本用 -X 注入（见 build.sh），标记本二进制是 32 位 ARM 的哪个变体。
+var BuildVariant string
+
+// normalizeVariant 只认 32 位 ARM 的 v5/v6/v7，其余（含其他架构传进来的值）一律按空处理。
+func normalizeVariant(v string) string {
+	switch s := strings.ToLower(strings.TrimSpace(v)); s {
+	case "v5", "v6", "v7":
+		return s
+	}
+	return ""
+}
+
+// CurrentVariant 返回当前二进制拼包名该用的变体：优先构建期注入值；没有注入（例如手工
+// go build 出来的 arm 二进制）时回落到编译信息里的 GOARM；非 32 位 ARM 返回空。
+func CurrentVariant() string {
+	if v := normalizeVariant(BuildVariant); v != "" {
+		return v
+	}
+	if runtime.GOARCH != "arm" {
+		return ""
+	}
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return ""
+	}
+	for _, s := range bi.Settings {
+		if s.Key == "GOARM" {
+			return normalizeVariant("v" + s.Value)
+		}
+	}
+	return ""
 }
 
 // FindAsset 在 Release 里按名字找资产。

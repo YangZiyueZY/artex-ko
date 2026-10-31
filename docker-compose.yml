@@ -15,9 +15,10 @@ services:
     restart: unless-stopped
 
   artex:
-    # 本分支在每次发布标签（v*）时向 GitHub Container Registry 发布的镜像
-    # （见 .github/workflows/release.yml 的 docker 作业）。上游 autumn27/artex 已从 Docker Hub 下架。
-    image: ghcr.io/jiwoochris/artex-global:${ARTEX_TAG:-latest}
+    # 本仓库每次打发布标签（v*）时由 release.yml 构建并推送到 GitHub Container Registry 的镜像。
+    # 默认取简体中文发行版自己的镜像；想改拉取别的命名空间（例如上游全球版），
+    # 在 .env 里设 ARTEX_IMAGE 即可，例如 ARTEX_IMAGE=ghcr.io/jiwoochris/artex-global。
+    image: ${ARTEX_IMAGE:-ghcr.io/yangziyuez/artex-ko}:${ARTEX_TAG:-latest}
     depends_on:
       postgres:
         condition: service_healthy

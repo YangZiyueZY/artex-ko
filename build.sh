@@ -2,12 +2,14 @@
 # ARTEX cross-platform release builder.
 #
 # The default mode builds one target and embeds the already-exported frontend.
-# `./build.sh --release` builds and packages all supported desktop/server targets.
+# `./build.sh --release` builds and packages all supported desktop/server targets
+# (linux/windows/darwin × amd64, arm64, 386, armv7, armv6).
 #
 # Environment variables:
 #   ARTEX_TARGET_OS=linux             One target OS in single-target mode.
 #   ARTEX_TARGET_ARCH=amd64           One target arch in single-target mode.
 #   ARTEX_TARGETS=linux/amd64,...     Comma-separated targets for multi-target mode.
+#                                     32 位 ARM 可写变体：linux/arm/v7、linux/arm/v6（缺省 v7）。
 #   ARTEX_BUILD_VERSION=v0.3.3        Version embedded in the binary and archive name.
 #   ARTEX_OUTPUT=/path/to/artex       Explicit binary path in single-target mode.
 #   ARTEX_OUTPUT_DIR=dist             Directory for default binary paths.
@@ -30,23 +32,27 @@ die() { printf '\033[31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 usage() {
   cat <<'EOF'
 用法：
-  ./build.sh                         按当前系统·当前架构编译
-  ./build.sh --target linux/amd64   编译指定的一个目标
-  ./build.sh --release               编译并打包所有受支持的目标
+  ./build.sh                                按当前系统·当前架构编译
+  ./build.sh --target linux/amd64           编译指定的一个目标
+  ./build.sh --target linux/arm/v7          编译 32 位 ARM（树莓派等，变体 v6/v7）
+  ./build.sh --release                      编译并打包所有受支持的目标
 
 选项：
-  --release              构建 Linux、macOS、Windows 的 amd64/arm64 目标并生成 zip
-  --target OS/ARCH       指定单个目标。例：windows/amd64
+  --release              构建 Linux、Windows、macOS 的 amd64/arm64/386/armv7/armv6 目标并生成 zip
+  --target OS/ARCH[/变体] 指定单个目标。例：windows/amd64、linux/386、linux/arm/v7
   --upx                  强制用 UPX 压缩二进制（可能影响部分 Linux 环境的兼容性）
   --no-compress          不使用 UPX，只用 Go linker 缩减后再压缩 zip
   --help                 显示帮助
 
 多个目标列表可通过 ARTEX_TARGETS 覆盖。例：
   ARTEX_TARGETS=linux/amd64,windows/amd64 ./build.sh --release
+  32 位与 ARM 变体：./build.sh --target linux/386；./build.sh --target linux/arm/v6
 EOF
 }
 
-RELEASE_TARGETS_DEFAULT="linux/amd64,linux/arm64,darwin/amd64,darwin/arm64,windows/amd64"
+# 受支持的目标：64 位（amd64·arm64）、32 位 x86（386）与 32 位 ARM（v7 = 树莓派 2/3 等
+# 主流设备，v6 = 树莓派 Zero 等更老的设备）。darwin 没有 32 位目标，Go 也不支持。
+RELEASE_TARGETS_DEFAULT="linux/amd64,linux/arm64,linux/386,linux/arm/v7,linux/arm/v6,windows/amd64,windows/arm64,windows/386,darwin/amd64,darwin/arm64"
 ARTEX_RELEASE="${ARTEX_RELEASE:-0}"
 ARTEX_COMPRESS="${ARTEX_COMPRESS:-off}"
 ARTEX_PACKAGE="${ARTEX_PACKAGE:-0}"
@@ -59,15 +65,16 @@ while [ "$#" -gt 0 ]; do
       shift
       ;;
     --target)
-      [ "$#" -ge 2 ] || die "--target 需要 OS/ARCH 参数"
+      [ "$#" -ge 2 ] || die "--target 需要 OS/ARCH[/变体] 参数"
       target_arg="$2"
       case "$target_arg" in
         */*)
           ARTEX_TARGET_OS="${target_arg%%/*}"
-          ARTEX_TARGET_ARCH="${target_arg##*/}"
+          ARTEX_TARGET_ARCH="$(printf '%s' "$target_arg" | cut -d/ -f2)"
+          ARTEX_TARGET_VARIANT="$(printf '%s' "$target_arg" | cut -d/ -f3)"
           ARTEX_TARGETS="$target_arg"
           ;;
-        *) die "目标必须是 OS/ARCH 格式。例：linux/amd64" ;;
+        *) die "目标必须是 OS/ARCH[/变体] 格式。例：linux/amd64、linux/arm/v7" ;;
       esac
       shift 2
       ;;
@@ -165,7 +172,9 @@ package_binary() {
   binary="$1"
   goos="$2"
   goarch="$3"
-  package_name="artex-${ARTEX_BUILD_VERSION}-${goos}-${goarch}"
+  namearch="$4"
+  # 包名必须与 selfupdate.AssetName 完全一致：artex-<版本>-<os>-<arch>[v6|v7].zip
+  package_name="artex-${ARTEX_BUILD_VERSION}-${goos}-${namearch}"
   package_root="${ARTEX_PACKAGE_DIR}/${package_name}"
   archive="${ARTEX_PACKAGE_DIR}/${package_name}.zip"
 
@@ -193,39 +202,67 @@ build_target() {
   target="$1"
   case "$target" in
     */*) ;;
-    *) die "无效的目标：$target（必须是 OS/ARCH 格式）" ;;
+    *) die "无效的目标：$target（必须是 OS/ARCH 或 OS/ARCH/变体 格式）" ;;
   esac
   goos="${target%%/*}"
-  goarch="${target##*/}"
+  rest="${target#*/}"
+  goarch="${rest%%/*}"
+  variant=""
+  case "$rest" in
+    */*) variant="${rest#*/}" ;;
+  esac
   case "$goos" in
     linux|darwin|windows) ;;
     *) die "不支持的系统：$goos（支持 linux、darwin、windows）" ;;
   esac
+  case "$goarch" in
+    amd64|arm64|386|arm) ;;
+    *) die "不支持的架构：$goarch（支持 amd64、arm64、386、arm）" ;;
+  esac
+  if [ -n "$variant" ] && [ "$goarch" != "arm" ]; then
+    die "只有 32 位 arm 需要变体写法，${goarch} 无需变体：$target"
+  fi
+
+  # 32 位 ARM 有 v6/v7 指令集差异：目标里写 v6/v7 优先，其次读 GOARM，最后按 v7。
+  goarm=""
+  if [ "$goarch" = "arm" ]; then
+    goarm="${variant#v}"
+    [ -n "$goarm" ] || goarm="${GOARM:-7}"
+    case "$goarm" in
+      5|6|7) ;;
+      *) die "不支持的 GOARM：$goarm（支持 5、6、7）" ;;
+    esac
+    variant="v${goarm}"
+  fi
+  # 发布名里的架构写法：32 位 ARM 带变体（armv6/armv7），其余仍是 amd64/arm64/386。
+  namearch="${goarch}${variant}"
 
   binary_name="artex"
   [ "$goos" = "windows" ] && binary_name="artex.exe"
   if [ -n "${ARTEX_OUTPUT:-}" ] && [ "$ARTEX_RELEASE" != "1" ]; then
     output="$ARTEX_OUTPUT"
   else
-    output="${ARTEX_OUTPUT_DIR}/artex-${goos}-${goarch}/${binary_name}"
+    output="${ARTEX_OUTPUT_DIR}/artex-${goos}-${namearch}/${binary_name}"
   fi
   mkdir -p "$(dirname "$output")"
 
-  info "编译 ${goos}/${goarch}，版本 ${ARTEX_BUILD_VERSION}"
-  GOSUMDB="$ARTEX_GOSUMDB" \
-  CGO_ENABLED=0 \
-  GOOS="$goos" \
-  GOARCH="$goarch" \
-  go build \
+  info "编译 ${goos}/${namearch}，版本 ${ARTEX_BUILD_VERSION}"
+  # 目标平台环境变量：GOARM 只在 32 位 ARM 上设置，其余架构保持 Go 默认。
+  build_env=(GOSUMDB="${ARTEX_GOSUMDB}" CGO_ENABLED=0 GOOS="${goos}" GOARCH="${goarch}")
+  [ -n "$goarm" ] && build_env+=(GOARM="${goarm}")
+  # 32 位 ARM 的变体写进二进制，供界面「一键更新」拼出对应发布包名（selfupdate.BuildVariant）。
+  ldflags="-s -w -buildid= -X main.version=${ARTEX_BUILD_VERSION}"
+  [ -n "$variant" ] && ldflags="$ldflags -X github.com/Autumn-27/artex/selfupdate.BuildVariant=${variant}"
+  env "${build_env[@]}" go build \
     -tags embedui \
     -trimpath \
-    -ldflags "-s -w -buildid= -X main.version=${ARTEX_BUILD_VERSION}" \
+    -ldflags "$ldflags" \
     -o "$output" \
     ./cmd/artex
 
   compress_binary "$output" "$goos"
   if command -v file >/dev/null 2>&1; then file "$output"; fi
-  if [ "$ARTEX_PACKAGE" = "1" ]; then package_binary "$output" "$goos" "$goarch"; fi
+  if [ "$ARTEX_PACKAGE" = "1" ]; then package_binary "$output" "$goos" "$goarch" "$namearch"; fi
   ok "编译完成：$output"
 }
 

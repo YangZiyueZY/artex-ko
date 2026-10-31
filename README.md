@@ -8,7 +8,7 @@
 
 中文 · [English](README.en.md) · [한국어](README.ko.md) · [Español](README.es.md) · [日本語](README.ja.md)
 
-[![ci](https://github.com/jiwoochris/artex-global/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jiwoochris/artex-global/actions/workflows/ci.yml) [![detections](https://github.com/jiwoochris/artex-global/actions/workflows/detections.yml/badge.svg?branch=main)](https://github.com/jiwoochris/artex-global/actions/workflows/detections.yml) [![web](https://github.com/jiwoochris/artex-global/actions/workflows/web.yml/badge.svg?branch=main)](https://github.com/jiwoochris/artex-global/actions/workflows/web.yml) [![license: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
+[![ci](https://github.com/YangZiyueZY/artex-ko/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/YangZiyueZY/artex-ko/actions/workflows/ci.yml) [![detections](https://github.com/YangZiyueZY/artex-ko/actions/workflows/detections.yml/badge.svg?branch=main)](https://github.com/YangZiyueZY/artex-ko/actions/workflows/detections.yml) [![web](https://github.com/YangZiyueZY/artex-ko/actions/workflows/web.yml/badge.svg?branch=main)](https://github.com/YangZiyueZY/artex-ko/actions/workflows/web.yml) [![license: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 
 🌐 **在线 Demo**： [https://artex-demo.vercel.app/](https://artex-demo.vercel.app/)
 
@@ -197,14 +197,22 @@ docker compose up -d          # 拉取 ghcr.io/jiwoochris/artex-global 镜像 + 
 
 ### 方式三：下载预编译二进制（Releases）
 
-到 [Releases](https://github.com/Autumn-27/ARTEX/releases) 下载对应平台的 zip，解压后得到 `artex` + `start.sh`（Windows 为 `start.bat`）+ `skills/` + `config.example.json`：
+到本仓库的 [Releases](https://github.com/YangZiyueZY/artex-ko/releases) 下载对应平台的 zip，解压后得到 `artex` + `start.sh`（Windows 为 `start.bat`）+ `skills/` + `config.example.json`。每次打 `v*` 标签，release 工作流都会自动构建下面 10 个平台并附 `SHA256SUMS`：
+
+| 平台 | 架构 | 包名示例 |
+|---|---|---|
+| Linux | amd64（x86-64）、arm64、**386（32 位 x86）**、**armv7 / armv6（32 位 ARM）** | `artex-<版本>-linux-amd64.zip`、`artex-<版本>-linux-386.zip`、`artex-<版本>-linux-armv7.zip`、`artex-<版本>-linux-armv6.zip` |
+| Windows | amd64（x86-64）、arm64、**386（32 位 x86）** | `artex-<版本>-windows-amd64.zip`、`artex-<版本>-windows-arm64.zip`、`artex-<版本>-windows-386.zip` |
+| macOS | arm64（Apple Silicon）、amd64（Intel） | `artex-<版本>-darwin-arm64.zip`、`artex-<版本>-darwin-amd64.zip` |
+
+32 位 ARM 区分指令集变体（v7 = 树莓派 2/3 等主流设备，v6 = 树莓派 Zero 等更老的设备）；二进制里记录了自身变体，页面上的[一键更新](#方式一页面一键更新推荐)会自动取对应包。
 
 ```bash
 cp config.example.json config.json   # 填好 database 连接
 ./start.sh                           # → http://localhost:8787
 ```
 
-> 上游仓库当前无法访问（2026-10 核查）；本全球版的发布镜像随 `v*` 标签发布到 GitHub Container Registry，见上文「快速开始」。
+> 上游 Autumn-27/ARTEX 仓库当前无法访问（2026-10 核查），因此本 fork 用自己的 [Releases](https://github.com/YangZiyueZY/artex-ko/releases) 与 `ghcr.io/yangziyuez/artex-ko` 镜像发布运行版本。
 
 > 请用 `start.sh` / `start.bat` 启动，而不是直接跑 `./artex`。它是个守护脚本：程序退出后按退出码决定是否重新拉起，**页面上的[一键更新](#方式一页面一键更新推荐)靠它完成换装**。直接运行 `./artex` 时更新完就不会被拉起了。
 > 后台常驻：`nohup ./start.sh >artex.log 2>&1 &`。
@@ -225,7 +233,7 @@ CGO_ENABLED=0 go build -tags embedui -o artex ./cmd/artex
 
 ### 方式五：构建跨平台 Release 压缩包
 
-`build.sh` 会先构建并嵌入前端，再使用 Go linker 去除调试信息，并将发布文件压缩为 zip。Release 模式默认生成 Linux amd64/arm64、macOS amd64/arm64 和 Windows amd64 的 zip 包：
+`build.sh` 会先构建并嵌入前端，再使用 Go linker 去除调试信息，并把发布文件压缩为 zip。Release 模式默认生成 10 个目标的 zip 包：Linux（amd64·arm64·386·armv7·armv6）、Windows（amd64·arm64·386）、macOS（amd64·arm64）：
 
 ```bash
 ./build.sh --release
@@ -235,9 +243,16 @@ CGO_ENABLED=0 go build -tags embedui -o artex ./cmd/artex
 UPX 自解压二进制可能与部分 Linux 内核、虚拟化环境或安全策略不兼容，因此默认不启用。可用 `ARTEX_TARGETS` 自定义目标；确认目标运行环境兼容时，可显式传入 `--upx` 进一步缩小二进制：
 
 ```bash
-ARTEX_TARGETS=linux/amd64,windows/amd64 ./build.sh --release
+ARTEX_TARGETS=linux/amd64,linux/386 ./build.sh --release
 ./build.sh --target linux/amd64 --upx
+# 32 位与 ARM 变体
+./build.sh --target linux/386
+./build.sh --target linux/arm/v7
+./build.sh --target linux/arm/v6
+./build.sh --target windows/386
 ```
+
+CI 侧：打 `v*` 标签即由 [release 工作流](.github/workflows/release.yml) 自动构建上面 10 个目标（含发布包内容校验、SHA256SUMS、GitHub Release，以及 amd64+arm64 多架构镜像推到 `ghcr.io/yangziyuez/artex-ko`）。只想试构建而不发布时，在 Actions 里手动运行 release 工作流（可填版本号、可勾选是否推送镜像），产物只作为 workflow artifact 保留。
 
 ---
 
@@ -670,6 +685,7 @@ https://github.com/oritera/Cairn
 - 上游在线 Demo（中文界面）：[https://artex-demo.vercel.app/](https://artex-demo.vercel.app/)（目前无法访问，2026-10 核查）
 - 智能体 SDK：[Autumn-27/norma](https://github.com/Autumn-27/norma)（目前无法访问，2026-10 核查）
 - 本仓库（简体中文发行版 fork）：[YangZiyueZY/artex-ko](https://github.com/YangZiyueZY/artex-ko)
-- 上游全球版 fork：[jiwoochris/artex-global](https://github.com/jiwoochris/artex-global)，维护者位于韩国；镜像发布在 GitHub Container Registry（`ghcr.io/jiwoochris/artex-global`）
+- 上游全球版 fork：[jiwoochris/artex-global](https://github.com/jiwoochris/artex-global)，维护者位于韩国；它自己的镜像在 `ghcr.io/jiwoochris/artex-global`
+- 本仓库（简体中文发行版）的发布：包在 [Releases](https://github.com/YangZiyueZY/artex-ko/releases)，镜像在 `ghcr.io/yangziyuez/artex-ko`（均由本仓库 release 工作流构建）
 - 资产同步：[Autumn-27/ScopeSentry](https://github.com/Autumn-27/ScopeSentry)
 - 审批详情 UI 参考：[RuoJi6/AegisHook](https://github.com/RuoJi6/AegisHook)

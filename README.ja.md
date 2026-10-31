@@ -8,7 +8,7 @@ UI と生成される出力はデフォルトで簡体字中国語になって�
 
 日本語 · [English](README.en.md) · [한국어](README.ko.md) · [中文](README.md) · [Español](README.es.md)
 
-[![ci](https://github.com/jiwoochris/artex-global/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jiwoochris/artex-global/actions/workflows/ci.yml) [![detections](https://github.com/jiwoochris/artex-global/actions/workflows/detections.yml/badge.svg?branch=main)](https://github.com/jiwoochris/artex-global/actions/workflows/detections.yml) [![web](https://github.com/jiwoochris/artex-global/actions/workflows/web.yml/badge.svg?branch=main)](https://github.com/jiwoochris/artex-global/actions/workflows/web.yml) [![license: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
+[![ci](https://github.com/YangZiyueZY/artex-ko/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/YangZiyueZY/artex-ko/actions/workflows/ci.yml) [![detections](https://github.com/YangZiyueZY/artex-ko/actions/workflows/detections.yml/badge.svg?branch=main)](https://github.com/YangZiyueZY/artex-ko/actions/workflows/detections.yml) [![web](https://github.com/YangZiyueZY/artex-ko/actions/workflows/web.yml/badge.svg?branch=main)](https://github.com/YangZiyueZY/artex-ko/actions/workflows/web.yml) [![license: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 
 </div>
 
@@ -90,7 +90,7 @@ ARTEX は、**自分が所有する標的、または明示的な書面による
 
 > **前提条件:** Docker と Docker Compose。データベースは **PostgreSQL** で、compose が立ち上げます。探索には **LLM**（`ANTHROPIC_API_KEY` または `OPENAI_API_KEY`。UI でも設定できます）が必要です。
 
-> **イメージ:** `docker-compose.yml` の `artex` サービスは `ghcr.io/jiwoochris/artex-global` を取得します。これは、このリポジトリがリリースタグ（`v*`）ごとに GitHub Container Registry に公開するグローバル版のイメージです。デフォルトのタグは `latest`（最新リリース）です。特定のリリースに固定するには `.env` で `ARTEX_TAG` を設定してください。上流のオリジナルイメージ `autumn27/artex` は Docker Hub から取り下げられており、もう使われていません。
+> **イメージ:** `docker-compose.yml` の `artex` サービスは `ghcr.io/yangziyuez/artex-ko` を取得します。これは、このリポジトリがリリースタグ（`v*`）ごとに GitHub Container Registry に公開するグローバル版のイメージです。デフォルトのタグは `latest`（最新リリース）です。特定のリリースに固定するには `.env` で `ARTEX_TAG` を設定してください。上流のオリジナルイメージ `autumn27/artex` は Docker Hub から取り下げられており、もう使われていません。
 
 ```bash
 git clone https://github.com/YangZiyueZY/artex-ko.git
@@ -107,7 +107,7 @@ docker compose up -d          # brings up the artex image + postgres together
 
 上流はいくつかの方法を提供しています。インストールスクリプト（`./install.sh`）、プリコンパイル済みバイナリ（Releases）、ソースからの単一バイナリビルドです。コマンドと手順の全体は [`README.md`](README.md#安装) の「安装」（インストール）の節（中国語）にまとめてありますが、要点を以下に再掲します。
 
-- **インストールスクリプト:** `./install.sh` を実行すると Docker を検出／インストールし、続いて「① すべて Docker で」または「② ローカルでコンパイルして実行」を選べます。「① すべて Docker で」は上記のクイックスタートと同じイメージ（`ghcr.io/jiwoochris/artex-global`）を取得して起動します。一方「② ローカルでコンパイルして実行」は、下記の **ソースからの単一バイナリビルド** と同じやり方で自分でビルドします。
+- **インストールスクリプト:** `./install.sh` を実行すると Docker を検出／インストールし、続いて「① すべて Docker で」または「② ローカルでコンパイルして実行」を選べます。「① すべて Docker で」は上記のクイックスタートと同じイメージ（`ghcr.io/yangziyuez/artex-ko`）を取得して起動します。一方「② ローカルでコンパイルして実行」は、下記の **ソースからの単一バイナリビルド** と同じやり方で自分でビルドします。
 - **ソースからの単一バイナリビルド:**
 
   ```bash
@@ -410,4 +410,4 @@ flowchart TB
 - オリジナル README（中国語）: 簡体字中国語の主文書 [README.md](README.md) に統合済み。[README.zh.md](README.zh.md) はそこを指す短い案内のみ
 - オリジナルのオンラインデモ（中国語 UI）: [https://artex-demo.vercel.app/](https://artex-demo.vercel.app/)（現在アクセス不可、2026-10 確認）
 - エージェント SDK: [Autumn-27/norma](https://github.com/Autumn-27/norma)（現在アクセス不可、2026-10 確認）
-- このリポジトリ（簡体字中国語ディストリビューション・フォーク）: [YangZiyueZY/artex-ko](https://github.com/YangZiyueZY/artex-ko) — グローバル版 [jiwoochris/artex-global](https://github.com/jiwoochris/artex-global)（韓国を拠点とするメンテナー）のフォークで、イメージは GitHub Container Registry（`ghcr.io/jiwoochris/artex-global`）に公開されています
+- このリポジトリ（簡体字中国語ディストリビューション・フォーク）: [YangZiyueZY/artex-ko](https://github.com/YangZiyueZY/artex-ko) — グローバル版 [jiwoochris/artex-global](https://github.com/jiwoochris/artex-global)（韓国を拠点とするメンテナー）のフォークで、イメージは GitHub Container Registry（`ghcr.io/yangziyuez/artex-ko`）に公開されています

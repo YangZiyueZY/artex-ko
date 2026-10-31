@@ -43,7 +43,7 @@ update_docker(){
   # up 时，pg 未启动会自动拉起，已在运行则保持原样、不重新配置。
   info "拉取新镜像（仅 artex）…"
   if ! docker compose pull artex; then
-    warn "拉取镜像 ghcr.io/jiwoochris/artex-global 失败（请确认指定 tag 是已发布的发行标签、网络可用）"
+    warn "拉取镜像失败（请确认 .env 的 ARTEX_IMAGE 与指定 tag 是已发布的镜像和标签、网络可用）"
     die "镜像更新失败。也可以选择“2) 本地更新（用 go 重新编译）”"
   fi
   info "重建并启动（artex 重启时会自动迁移 schema）…"

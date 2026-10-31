@@ -56,10 +56,11 @@ func Stage(ctx context.Context, c *http.Client, rel *Release, currentVersion str
 		return err
 	}
 
-	name := AssetName(rel.TagName, runtime.GOOS, runtime.GOARCH)
+	variant := CurrentVariant()
+	name := AssetName(rel.TagName, runtime.GOOS, runtime.GOARCH, variant)
 	asset, ok := rel.FindAsset(name)
 	if !ok {
-		return fmt.Errorf("该版本没有提供 %s/%s 的发布包(缺少 %s)", runtime.GOOS, runtime.GOARCH, name)
+		return fmt.Errorf("该版本没有提供 %s/%s%s 的发布包(缺少 %s)", runtime.GOOS, runtime.GOARCH, variant, name)
 	}
 
 	prog(PhaseDownload, 0, "正在获取校验和列表…")

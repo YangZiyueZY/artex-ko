@@ -316,19 +316,22 @@ OK（2xx、3xx）、RESTRICTED（401、403、405、429，主机存活但确认�
 ## 9. 发布流水线
 
 推送版本标签（`v*`）会触发 [`.github/workflows/release.yml`](.github/workflows/release.yml)，
-为五个平台构建二进制，并在满足条件时构建多架构 Docker 镜像。本 fork 尚未打过发布标签，
-该工作流一次也没有运行过，因此本节整理流水线依赖哪些前提、产出什么，以及这些前提目前是否
-与仓库结构相符。推送标签会在公开仓库生成 GitHub Release，所以打发布标签要在发布决定之后
-进行。
+为 10 个平台构建运行版本，并在满足条件时构建多架构 Docker 镜像。本节整理流水线依赖哪些
+前提、产出什么，以及如何在不发布的情况下试跑。推送标签会在公开仓库生成 GitHub Release，
+所以打发布标签要在发布决定之后进行。
 
 ### 9.1 如何打发布标签
 
 推送以 `v` 开头的标签即会触发工作流。
 
 ```bash
-git tag v0.3.15
-git push origin v0.3.15
+git tag v0.3.15-zh.1
+git push origin v0.3.15-zh.1
 ```
+
+只想验证流水线、暂不发布时，在 Actions 页面手动运行 `release` 工作流
+（`workflow_dispatch`）：可填版本号（留空则用 `dev.<运行号>`）、可勾选是否顺带推送镜像。
+手动运行不创建 GitHub Release，产物只保留在 workflow artifact 里。
 
 ### 9.2 流水线做什么
 
@@ -336,15 +339,20 @@ git push origin v0.3.15
 
 - **frontend。**把前端静态导出一次（`web/out`），并把该产物作为 `web-dist` 制品上传。
   下面的 binaries 作业会为每个目标重新下载并复用该产物。
-- **binaries。**交叉编译五个目标（linux amd64、arm64，darwin amd64、arm64，windows amd64），
-  并为每个目标打包成 zip。对 linux amd64 二进制运行 `artex -h` 冒烟测试，确认二进制确实
-  可以执行。
-- **release。**汇总所有 zip 生成 `SHA256SUMS` 校验和，创建 GitHub Release 并附上 zip 与
-  校验和。
+- **binaries。**用矩阵交叉编译 10 个目标，并为每个目标打包成 zip：
+  - linux/amd64、linux/arm64、**linux/386（32 位 x86）**、**linux/arm/v7、linux/arm/v6（32 位 ARM）**
+  - windows/amd64、windows/arm64、**windows/386**
+  - darwin/amd64、darwin/arm64（Go 不支持 32 位 macOS）
+
+  每个 zip 都会校验内容（二进制、启动脚本、`config.example.json`、`skills/`）；linux/amd64
+  直接跑 `artex -h` 冒烟测试，linux/386 在 runner 支持 IA32 模拟时也跑一次（否则只告警），
+  其余目标用 `file` 核对 ELF/PE/Mach-O 架构。
+- **checksums。**汇总所有 zip 生成 `SHA256SUMS`，作为 `release-assets` 制品上传（手动运行也能下载）。
+- **release。**仅在标签推送时运行：创建 GitHub Release 并附上 zip 与 `SHA256SUMS`。
 - **docker。**接收 binaries 交叉编译出的 linux 二进制，构建多架构（amd64、arm64）镜像，并以
-  发布标签与 `latest` 推送到 GitHub Container Registry 的
-  `ghcr.io/jiwoochris/artex-global`。登录使用工作流默认的 `GITHUB_TOKEN`（作业权限
-  `packages: write`），因此没有额外的 secret。
+  发布标签与 `latest` 推送到 GitHub Container Registry 的 `ghcr.io/<owner>/<repo>`（镜像名取
+  当前仓库并转小写，可用仓库变量 `ARTEX_IMAGE` 覆盖）。登录使用工作流默认的 `GITHUB_TOKEN`
+  （作业权限 `packages: write`），因此没有额外的 secret。
 
 ### 9.3 构建前提是否与仓库结构相符
 
@@ -355,9 +363,11 @@ git push origin v0.3.15
   到 `server/webui/dist`，`server/webui_embed.go` 的 `//go:embed all:webui/dist` 会把该位置
   内嵌进二进制。因此 binaries 作业不重新构建前端，而是以 `ARTEX_SKIP_FRONTEND=1` 调用
   [`build.sh`](build.sh)。
-- **二进制与打包路径。**`build.sh --target <os>/<arch>` 生成
-  `dist/artex-<os>-<arch>/artex` 二进制与 `dist/` 下的 zip 包。zip 中除二进制外还包含启动
-  脚本（Linux、macOS 为 `start.sh`，Windows 为 `start.bat`）、`skills/`、
+- **二进制与打包路径。**`build.sh --target <os>/<arch>[/变体]` 生成
+  `dist/artex-<os>-<arch>/artex` 二进制与 `dist/` 下的 zip 包；32 位 ARM 把变体写进架构名
+  （`--target linux/arm/v7` → `dist/artex-linux-armv7/artex`、`artex-<版本>-linux-armv7.zip`），
+  并同时通过 `-X` 把变体写进二进制，供页面一键更新拼出正确的包名。zip 中除二进制外还包含
+  启动脚本（Linux、macOS 为 `start.sh`，Windows 为 `start.bat`）、`skills/`、
   `config.example.json`、`README.md`。
 - **Docker 镜像的二进制复制。**binaries 作业把 linux 二进制单独作为 `bin-linux-<arch>`
   制品上传，docker 作业把它下载到 `dist/<arch>/artex`。
@@ -367,10 +377,11 @@ git push origin v0.3.15
 
 ### 9.4 Docker 镜像命名空间
 
-镜像发布到本 fork 拥有的 `ghcr.io/jiwoochris/artex-global`，`docker-compose.yml` 也拉取
-该镜像（2026-10-11 决定，`work/DECISIONS-FOR-JIWOO.md` 第 8 项）。上游的 `autumn27/artex`
-已从 Docker Hub 下架，本 fork 也没有推送权限，因此不使用。GHCR 包在首次发布时可能被创建为
-私有，所以首次发布后请在包设置中确认是否为公开（public）。若为私有，
+工作流把镜像发布到当前仓库对应的 GHCR 命名空间（`ghcr.io/<owner>/<repo>`，全小写），
+也就是本仓库的 `ghcr.io/yangziyuez/artex-ko`；`docker-compose.yml` 通过
+`${ARTEX_IMAGE:-ghcr.io/yangziyuez/artex-ko}` 拉取同一个镜像，可在 `.env` 里改 `ARTEX_IMAGE`
+指向别的命名空间。上游 `autumn27/artex` 已从 Docker Hub 下架，不使用。GHCR 包首次发布时
+通常被创建为私有，所以首次发布后请在包设置中确认是否为公开（public）。若为私有，
 `docker compose pull` 会因认证错误失败。
 
 ### 9.5 不打标签、在本地预先验证
@@ -389,7 +400,9 @@ docker run --rm -v "$PWD":/app -w /app \
   -e ARTEX_COMPRESS=0 -e ARTEX_PACKAGE=1 -e ARTEX_PACKAGE_DIR=dist \
   -e ARTEX_BUILD_VERSION=v0.0.0-local \
   golang:1.26 bash -c 'apt-get update && apt-get install -y zip && ./build.sh --target linux/amd64'
-# 4) 确认产物：dist/artex-linux-amd64/artex · dist/*.zip · dist/SHA256SUMS
+# 3b) 32 位 / ARM 目标同理（Go 交叉编译，不需要额外工具链）
+#     ./build.sh --target linux/386 ; ./build.sh --target linux/arm/v7 ; ./build.sh --target windows/386
+# 4) 确认产物：dist/artex-linux-amd64/artex · dist/artex-linux-armv7/artex · dist/*.zip · dist/SHA256SUMS
 ```
 
 `dist/artex-linux-amd64/artex` 是静态链接的 ELF，加上 `-h` 会输出用法后以退出码 0 结束。

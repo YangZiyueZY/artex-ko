@@ -48,7 +48,7 @@ install_docker(){
   info "拉取镜像并启动…"
   docker compose pull || true
   if ! docker compose up -d; then
-    warn "拉取或启动镜像 ghcr.io/jiwoochris/artex-global 失败（请确认 .env 中的 ARTEX_TAG 是已发布的标签、网络可用）"
+    warn "拉取或启动镜像失败（请确认 .env 中的 ARTEX_IMAGE/ARTEX_TAG 指向已发布的镜像与标签、网络可用；首次发布后需在 GitHub Packages 里把镜像设为 Public）"
     warn "也可以重新运行本脚本并选择“2) 本地运行（go 编译）”，或按 README“从源码编译单文件二进制”的路径构建"
     die "Docker Compose（全部用 Docker）启动失败"
   fi

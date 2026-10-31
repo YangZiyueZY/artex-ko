@@ -405,13 +405,27 @@ func TestCheckURLRejectsNonGitHub(t *testing.T) {
 }
 
 func TestAssetNameMatchesBuildScript(t *testing.T) {
-	// build.sh 的 package_binary 用的是 artex-<版本>-<os>-<arch>.zip，且版本号
+	// build.sh 的 package_binary 用的是 artex-<版本>-<os>-<arch>[v6|v7].zip，且版本号
 	// 去掉了 v 前缀。这里对错一个字符，所有平台的一键更新都会找不到资产。
-	if got := AssetName("v0.3.8", "linux", "amd64"); got != "artex-0.3.8-linux-amd64.zip" {
+	if got := AssetName("v0.3.8", "linux", "amd64", ""); got != "artex-0.3.8-linux-amd64.zip" {
 		t.Errorf("AssetName = %q", got)
 	}
-	if got := AssetName("0.3.8", "windows", "amd64"); got != "artex-0.3.8-windows-amd64.zip" {
+	if got := AssetName("0.3.8", "windows", "amd64", ""); got != "artex-0.3.8-windows-amd64.zip" {
 		t.Errorf("AssetName = %q", got)
+	}
+	// 32 位 ARM 必须带变体，否则 v6/v7 两个包会撞名。
+	if got := AssetName("v0.3.8", "linux", "arm", "v7"); got != "artex-0.3.8-linux-armv7.zip" {
+		t.Errorf("AssetName(arm,v7) = %q", got)
+	}
+	if got := AssetName("v0.3.8", "linux", "arm", "V6"); got != "artex-0.3.8-linux-armv6.zip" {
+		t.Errorf("AssetName(arm,V6) = %q", got)
+	}
+	// 其他架构忽略变体，避免拼出 artex-...-amd64v7.zip 这种读不到的名字。
+	if got := AssetName("v0.3.8", "linux", "amd64", "v7"); got != "artex-0.3.8-linux-amd64.zip" {
+		t.Errorf("AssetName(amd64,v7) = %q", got)
+	}
+	if got := AssetName("v0.3.8", "linux", "386", ""); got != "artex-0.3.8-linux-386.zip" {
+		t.Errorf("AssetName(386) = %q", got)
 	}
 }
 
