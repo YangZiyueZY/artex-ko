@@ -63,7 +63,7 @@ export default function SystemSettingsPage() {
   // 纯前端偏好：不走 /api/settings，直接读写 localStorage。
   const sendMode = useChatSendMode();
   const sendModeOptions = useChatSendModeOptions();
-  // 표시 언어도 순수 프런트엔드 환경설정이라 /api/settings 를 거치지 않고 쿠키·localStorage 로만 둔다.
+  // 显示语言也属于纯前端配置，不经过 /api/settings，只放在 Cookie·localStorage 中。
   const activeLocale = useActiveLocale();
 
   const apply = React.useCallback((s: Settings) => {
@@ -118,9 +118,9 @@ export default function SystemSettingsPage() {
       .catch(() => undefined)
       .finally(() => setSaving(false));
   };
-  // 표시 언어 변경: UI 는 브라우저 로컬 설정이라 즉시 전환하고, 에이전트가 생성하는
-  // 리포트·요약·대화 응답의 언어(서버 설정 output_language)도 같은 값으로 맞춘다. 서버
-  // 저장이 실패해도 UI 전환은 그대로 유지하고 오류만 알린다.
+  // 切换显示语言：UI 属浏览器本地设置，立即切换；同时把智能体生成的
+  // 报告·摘要·对话回复的语言（服务端设置 output_language）也设为同一值。即使服务端
+  // 保存失败，UI 切换也照常保留，只提示错误。
   const changeLanguage = (v: string) => {
     const loc = v as Locale;
     setActiveLocale(loc);

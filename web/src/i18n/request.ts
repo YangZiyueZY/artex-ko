@@ -2,8 +2,8 @@ import { getRequestConfig } from "next-intl/server";
 
 import { type Locale, resolveLocale } from "./config";
 
-// locale 별 메시지 로더. 명시적 import 맵으로 둬서 번들러가 messages/ 디렉터리 전체를
-// context 모듈로 끌어들이지 않게 한다(로컬에만 존재하는 zh.sources.json 제외).
+// 按 locale 拆分消息加载器。使用显式 import 映射，避免打包器把 messages/ 整个目录
+// 当作 context 模块拉进来（排除仅本地存在的 zh.sources.json）。
 const loaders: Record<Locale, () => Promise<{ default: Record<string, unknown> }>> = {
   en: () => import("../../messages/en.json"),
   ko: () => import("../../messages/ko.json"),
@@ -12,10 +12,10 @@ const loaders: Record<Locale, () => Promise<{ default: Record<string, unknown> }
   ja: () => import("../../messages/ja.json"),
 };
 
-// next-intl 요청 설정. i18n 경로 라우팅(세그먼트·미들웨어)을 쓰지 않는 구성이라
-// locale 을 여기서 직접 정한다. requestLocale 은 참조하지 않으므로 동적 렌더링을
-// 유발하지 않는다. 이 설정은 서버 컴포넌트·프리렌더의 기본 언어만 정하고, 실행 중
-// 사용자 전환은 클라이언트의 IntlRuntimeProvider 가 담당한다(messages/en·ko·zh·es·ja).
+// next-intl 请求配置。本项目不使用 i18n 路径路由（分段·中间件），因此在这里
+// 直接决定 locale。不引用 requestLocale，所以不会触发动态渲染。此设置只决定
+// 服务端组件与预渲染的默认语言，运行时的用户切换由客户端 IntlRuntimeProvider
+// 负责（messages/en·ko·zh·es·ja）。
 export default getRequestConfig(async () => {
   const locale = resolveLocale();
   const messages = (await loaders[locale]()).default;

@@ -59,7 +59,7 @@ export default function MCPPage() {
       .agents()
       .then(setAgents)
       .catch(() => {
-        /* 조회 실패는 무시하고 기본 상태를 유지한다 */
+        /* 忽略查询失败，保持原有状态 */
       });
     api
       .mcpServers()
@@ -70,12 +70,12 @@ export default function MCPPage() {
             .resourceVisibility("mcp", s.id)
             .then((ids) => setVisibility((v) => ({ ...v, [s.id]: ids })))
             .catch(() => {
-              /* 가시성 조회 실패는 무시한다 */
+              /* 忽略可见性查询失败 */
             });
         });
       })
       .catch(() => {
-        /* 조회 실패는 무시하고 기본 상태를 유지한다 */
+        /* 忽略查询失败，保持原有状态 */
       });
   }, []);
   React.useEffect(() => {
@@ -384,8 +384,8 @@ export default function MCPPage() {
                 <Badge variant="outline" className="shrink-0 uppercase">
                   {s.transport}
                 </Badge>
-                {/* biome-ignore lint/a11y/noStaticElementInteractions: 부모 카드로의 클릭 전파만 차단하는 컨테이너다. 이 div 자체는 상호작용 요소가 아니고, 안쪽 Switch·삭제 버튼은 각각 키보드로 접근된다 */}
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: 위와 같이 클릭 전파 차단 전용이라 별도 키보드 핸들러가 필요 없다 */}
+                {/* biome-ignore lint/a11y/noStaticElementInteractions: 它只是阻止点击事件冒泡到父卡片的容器。这个 div 本身不是交互元素，内部的 Switch 与删除按钮都可分别通过键盘访问 */}
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: 与上面相同，仅用于阻止点击冒泡，因此不需要额外的键盘处理器 */}
                 <div className="ml-auto flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   <Switch checked={s.enabled} onCheckedChange={() => toggleEnabled(s)} aria-label={t("enableAria")} />
                   <Button size="icon" variant="outline" aria-label={t("deleteAria")} onClick={() => removeServer(s)}>
@@ -398,8 +398,8 @@ export default function MCPPage() {
               <p className="text-muted-foreground text-sm">
                 {s.tools && s.tools.length > 0 ? t("toolCount", { count: s.tools.length }) : t("noTools")}
               </p>
-              {/* biome-ignore lint/a11y/noStaticElementInteractions: 체크박스 영역의 클릭 전파만 차단하는 컨테이너다. 이 div 자체는 상호작용 요소가 아니고, 안쪽 체크박스는 각각 키보드로 접근된다 */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: 위와 같이 클릭 전파 차단 전용이라 별도 키보드 핸들러가 필요 없다 */}
+              {/* biome-ignore lint/a11y/noStaticElementInteractions: 它只是阻止点击事件冒泡到复选框区域的容器。这个 div 本身不是交互元素，内部的复选框可通过键盘访问 */}
+              {/* biome-ignore lint/a11y/useKeyWithClickEvents: 与上面相同，仅用于阻止点击冒泡，因此不需要额外的键盘处理器 */}
               <div className="grid gap-2" onClick={(e) => e.stopPropagation()}>
                 <span className="text-muted-foreground text-xs">{t("visibilityLabel")}</span>
                 <div className="flex flex-wrap gap-x-4 gap-y-2">

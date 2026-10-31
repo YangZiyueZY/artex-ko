@@ -947,8 +947,8 @@ export interface Settings {
   notify_enabled?: boolean; // 推送总开关，默认开；用于维护期一键止血
   notify_public_base_url?: string; // 漏洞详情回链的外部访问地址；空=消息不带回链
   notify_digest_interval_min?: number; // 汇总模式周期（分钟），默认 30
-  // 사용자 대면 출력 언어(en/ko/zh/es/ja). 에이전트가 생성하는 리포트·요약·대화 응답이
-  // 이 언어를 따른다. 설정 화면의 "표시 언어" 선택기가 UI 언어와 함께 이 값도 저장한다.
+  // 面向用户的输出语言（en/ko/zh/es/ja）。智能体生成的报告·摘要·对话回复
+  // 遵循该语言。设置界面的“显示语言”选择器会连同 UI 语言一起保存这个值。
   output_language?: string;
 }
 
@@ -1335,7 +1335,7 @@ export interface JudgeConfig {
   ask_timeout_action: "allow" | "deny"; // 审批超时后的默认动作
 }
 
-// JudgeUsage: 모델 판정(대체 승인, judge 레인)의 누적 token 사용량과 최근 N일 일별 시계열.
+// JudgeUsage：模型判定（替代审批、judge 通道）的累计 token 用量与最近 N 天的按日时序。
 export interface JudgeDayUsage {
   date: string; // YYYY-MM-DD (UTC)
   calls: number;

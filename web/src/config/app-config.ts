@@ -4,11 +4,11 @@ import packageJson from "../../package.json";
 
 const currentYear = new Date().getFullYear();
 
-// 브라우저 탭 제목·검색엔진 메타 설명. layout.tsx 의 정적 metadata 로 들어가 모든
-// 페이지의 <title>·<meta name="description"> 에 렌더되므로, 빌드 기본 locale 에 맞춰
-// 다섯 언어를 분기한다. zh 는 상류 대조를 위해 원문을 그대로 보존한다. 제목은 엠대시 대신
-// 콜론을 써서 "제품명: 설명" 형태로 둔다. 이 메타는 빌드 시점 정적 값이라 실행 중 언어
-// 전환에는 반응하지 않는다(탭 제목 한 줄 수준이라 허용한다).
+// 浏览器标签页标题与搜索引擎 meta 描述。它们作为 layout.tsx 的静态 metadata，
+// 渲染到所有页面的 <title>·<meta name="description"> 中，因此按构建时的默认 locale
+// 分支五种语言。标题使用冒号而非长破折号，
+// 保持“产品名：描述”的形式。该 meta 是构建时的静态值，不会响应运行时的语言
+// 切换（仅涉及标签页标题一行，故可接受）。
 const META_BY_LOCALE: Record<Locale, { title: string; description: string }> = {
   en: {
     title: "ARTEX: Autonomous Penetration Testing Console",

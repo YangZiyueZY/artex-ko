@@ -5,56 +5,56 @@ import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 import type { Agent } from "@/lib/types";
 
-// 기본 에이전트(builtin)의 이름·설명·프롬프트 변수 라벨은 DB 시드 데이터라
-// 중국어로만 들어 있다(db/db.go 의 builtinAgents, server/finding_retests.go 의
-// 漏洞复测 에이전트). DB 값을 언어별로 둘 수 없고 시드가 ON CONFLICT DO NOTHING 이라
-// 이미 설치된 인스턴스에는 반영되지도 않으므로, 화면에서는 key 로 메시지 파일
-// (web/messages/{ko,en,zh,es,ja}.json 의 builtinAgents 네임스페이스)에서 번역을 찾아
-// 보여 주고, 없으면 DB 값을 그대로 쓴다. 사용자가 만든 에이전트는 항상 DB 값.
+// 内置智能体（builtin）的名称·描述·提示词变量标签来自数据库种子数据，
+// 且只有中文（db/db.go 的 builtinAgents、server/finding_retests.go 的
+// 漏洞复测 智能体）。数据库值无法按语言分列存放，且种子使用 ON CONFLICT DO NOTHING，
+// 对已安装的实例也不会生效，因此界面按 key 从消息文件
+//（web/messages/{ko,en,zh,es,ja}.json 的 builtinAgents 命名空间）中查找译文显示，
+// 找不到时原样使用数据库值。用户创建的智能体始终使用数据库值。
 
-// retester 는 DB 에 builtin=false 로 시드되지만(server FindingRetestAgentKey) 시스템이
-// 심은 고정 key 라 번역 대상에 포함한다. builtin=true 인 에이전트(goals/planner/
-// mainagent/worker/auto/pentest)는 agent.builtin 으로 걸러지므로 여기 둘 필요가 없다.
+// retester 在数据库中以 builtin=false 播种（server FindingRetestAgentKey），
+// 但它是系统内置的固定 key，因此也纳入翻译范围。builtin=true 的智能体（goals/planner/
+// mainagent/worker/auto/pentest）会被 agent.builtin 过滤，无需列在这里。
 const SYSTEM_SEEDED_AGENT_KEYS = new Set(["retester"]);
 
 function isSystemSeeded(agent: { key: string; builtin?: boolean }): boolean {
   return !!agent.builtin || SYSTEM_SEEDED_AGENT_KEYS.has(agent.key);
 }
 
-// useAgentLabels 는 기본 에이전트의 이름·설명·프롬프트 변수 라벨을 현재 언어로
-// 돌려주는 헬퍼 묶음이다. 모든 표시 지점에서 이 헬퍼를 거쳐 라벨을 얻는다.
+// useAgentLabels 是返回内置智能体名称·描述·提示词变量标签（按当前语言）的
+// 辅助函数集合。所有展示位置都通过这些辅助函数获取标签。
 export function useAgentLabels() {
   const t = useTranslations("builtinAgents");
 
-  // 호출 쪽이 이 함수들을 useMemo·useCallback 의존성으로 쓰므로(대화 그룹·필터 계산),
-  // 언어(t)가 바뀔 때만 새 묶음을 만든다. 매 렌더 새 객체면 그 계산이 매번 다시 돈다.
+  // 调用方会把这些函数作为 useMemo·useCallback 的依赖（对话分组·筛选计算），
+  // 因此只在语言（t）变化时创建新集合。若每次渲染都产生新对象，这些计算会反复执行。
   return useMemo(() => {
-    // name 은 기본 에이전트면 번역 이름을, 아니면 DB 이름(agent.name)을 돌려준다.
+    // name 对内置智能体返回翻译名称，否则返回数据库名称（agent.name）。
     const name = (agent: { key: string; name: string; builtin?: boolean }): string => {
       if (isSystemSeeded(agent) && t.has(`${agent.key}.name`)) return t(`${agent.key}.name`);
       return agent.name;
     };
 
-    // description 은 기본 에이전트면 번역 설명을, 아니면 DB 설명(없으면 빈 문자열)을
-    // 돌려준다. 빈 설명 폴백 문구는 호출 쪽에서 기존대로 붙인다.
+    // description 对内置智能体返回翻译描述，否则返回数据库描述（没有则为空字符串）。
+    // 空描述的兜底文案仍由调用方按原样拼接。
     const description = (agent: { key: string; description?: string; builtin?: boolean }): string => {
       if (isSystemSeeded(agent) && t.has(`${agent.key}.description`)) return t(`${agent.key}.description`);
       return agent.description ?? "";
     };
 
-    // nameByKey 는 Agent 객체 없이 key 만 있을 때(대화 그룹 묶기 등) 쓰는 변형이다.
-    // 조회기(agent 를 돌려주는 함수)를 받아 있으면 번역, 없으면 key 를 돌려준다.
+    // nameByKey 是没有 Agent 对象、只有 key 时（对话分组等）使用的变体。
+    // 它接收查询函数（返回 agent 的函数），查到则返回译文，查不到则返回 key。
     const nameByKey = (
       key: string,
       lookup: (key: string) => { key: string; name: string; builtin?: boolean } | undefined,
     ): string => {
       const agent = lookup(key);
-      // biome-ignore lint/nursery/useNullishCoalescing: 이름이 빈("") 에이전트도 예전처럼 key 로 대신 보여 줘야 하므로 || 가 의도된 동작이다.
+      // biome-ignore lint/nursery/useNullishCoalescing: 名称为空（""）的智能体仍要像以前一样改用 key 显示，因此 || 是刻意为之。
       return (agent && name(agent)) || key;
     };
 
-    // varLabel 은 기본 에이전트의 프롬프트 변수 라벨(예: goals 의 "任务总目标")을
-    // 번역한다. 없으면 DB 라벨(fallback)을 그대로 쓴다.
+    // varLabel 翻译内置智能体的提示词变量标签（例如 goals 的“任务总目标”）。
+    // 没有译文时原样使用数据库标签（fallback）。
     const varLabel = (agentKey: string, builtin: boolean, varName: string, fallback: string): string => {
       if ((builtin || SYSTEM_SEEDED_AGENT_KEYS.has(agentKey)) && t.has(`${agentKey}.vars.${varName}`)) {
         return t(`${agentKey}.vars.${varName}`);
@@ -66,8 +66,8 @@ export function useAgentLabels() {
   }, [t]);
 }
 
-// 에이전트 목록은 화면 여러 곳(승인 기록 등)이 key → 표시 이름 변환에만 쓰므로
-// 한 번 받아 모듈 단위로 공유한다. 실패하면 다음 호출에서 다시 받는다.
+// 智能体列表只被界面多处（审批记录等）用于 key → 显示名称的转换，
+// 因此获取一次后在模块级共享。失败时在下次调用时重新获取。
 let agentListPromise: Promise<Agent[]> | null = null;
 function loadAgentList(): Promise<Agent[]> {
   if (!agentListPromise) {
@@ -79,9 +79,9 @@ function loadAgentList(): Promise<Agent[]> {
   return agentListPromise;
 }
 
-// useAgentNameByKey 는 에이전트 객체 없이 key 만 가진 화면(승인·가로채기 기록의
-// conv_agent_key 등)에서 쓰는 변환기를 돌려준다. 기본 에이전트는 현재 언어 이름,
-// 사용자 에이전트는 DB 이름, 목록에 없거나 아직 못 받았으면 key 를 그대로 보여 준다.
+// useAgentNameByKey 返回供只有 key 而没有智能体对象的界面（审批·拦截记录中的
+// conv_agent_key 等）使用的转换器。内置智能体显示当前语言名称，
+// 用户智能体显示数据库名称，不在列表中或尚未获取到时原样显示 key。
 export function useAgentNameByKey(): (key: string) => string {
   const labels = useAgentLabels();
   const [agents, setAgents] = useState<Map<string, Agent>>(() => new Map());
@@ -92,7 +92,7 @@ export function useAgentNameByKey(): (key: string) => string {
         if (alive) setAgents(new Map(list.map((a) => [a.key, a])));
       })
       .catch(() => {
-        // 목록을 못 받으면 key 를 그대로 보여 준다(다음 마운트에서 다시 시도).
+        // 获取不到列表时原样显示 key（下次挂载时重试）。
       });
     return () => {
       alive = false;

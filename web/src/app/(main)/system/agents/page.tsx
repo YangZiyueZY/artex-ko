@@ -74,7 +74,7 @@ function AgentGridCard({ agent, onOpen, onDeleted }: { agent: Agent; onOpen: () 
             </Badge>
           )}
         </div>
-        {/* labels.description 은 string 을 돌려주므로(빈 설명은 "") || 로 폴백 문구를 붙인다. */}
+        {/* labels.description 返回 string（空描述为 ""），因此用 || 拼接兜底文案。*/}
         <p className="text-muted-foreground line-clamp-2 min-h-8 text-xs">
           {labels.description(agent) || t("noDescription")}
         </p>

@@ -203,8 +203,8 @@ function taskDuration(task: Task, nowSec: number): number {
 // aggregate accumulated over a bulk delete.
 type DeleteCounts = Omit<DeleteTaskResult, "deleted" | "cleanup_warning">;
 
-// 모듈 레벨 함수는 hook 을 호출할 수 없으므로, 번역 함수를 인자로 받아 사용자 노출
-// 문자열을 한국어로 만든다(approval-records 선례).
+// 模块级函数不能调用 hook，因此把翻译函数作为参数传入，生成面向用户展示的
+// 文案（沿用 approval-records 的做法）。
 type Translator = ReturnType<typeof useTranslations>;
 
 function deleteDetails(t: Translator, result: DeleteCounts): string[] {
@@ -232,8 +232,8 @@ function fmtDateTime(unix?: number): string {
   return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-// 상태 필터 옵션. 라벨은 렌더 시점에 status.task 네임스페이스로 번역하므로 여기서는
-// 값(순서 포함)만 둔다.
+// 状态筛选选项。标签在渲染时用 status.task 命名空间翻译，因此这里只保留
+// 取值（包括顺序）。
 const STATUS_OPTIONS: readonly TaskStatus[] = ["created", "queued", "running", "paused", "done", "failed", "timeout"];
 
 // Select 不接受空字符串 value,所以「无分类」在筛选器、新建表单和批量移动里
@@ -934,11 +934,11 @@ export default function TasksPage() {
                 {t("empty.noMatch")}
               </div>
             ) : (
-              /* @container 로 표가 차지하는 "본문" 폭에 반응한다(뷰포트가 아니라).
-                 사이드바가 펼쳐지면 같은 뷰포트라도 본문이 좁아지므로, 뷰포트 기준
-                 반응형으로는 중간 폭에서 열이 겹친다. 폭이 좁아지면 우선순위 낮은 열
-                 (설명·목표 진행도·Worker·생성/실행 시각·Token)부터 숨겨, 고정된 「동작」
-                 열이 다른 열 위에 겹치지 않게 한다. */
+              /* @container 让表格响应自身占用的“正文”宽度（而非视口）。
+                 侧边栏展开时即使视口不变正文也会变窄，因此按视口的
+                 响应式会在中等宽度下出现列重叠。宽度变窄时优先隐藏低优先级列
+                 （说明·目标进度·Worker·创建/执行时间·Token），避免固定的“操作”
+                 列与其他列重叠。 */
               <div className="@container">
                 <Table className="**:data-[slot='table-cell']:px-4 **:data-[slot='table-head']:px-4">
                   <TableHeader className="[&_tr]:border-t">
@@ -1696,7 +1696,7 @@ function TaskArchivesPanel({ onChanged }: { onChanged: () => void }) {
         const states = await Promise.allSettled(pending.map((id) => api.taskArchive(id)));
         let restored = false;
         states.forEach((state, index) => {
-          // 복원이 끝나면 보관 항목이 사라져 404 가 된다(문구는 표시 언어에 따라 달라짐).
+          // 恢复完成后归档项会消失从而返回 404（文案会随显示语言变化）。
           if (state.status !== "rejected" || !(state.reason instanceof ApiError)) return;
           if (state.reason.status !== 404) return;
           pendingRestoreIDs.current.delete(pending[index]);

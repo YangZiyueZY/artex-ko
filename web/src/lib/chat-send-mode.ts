@@ -6,18 +6,18 @@ import { useTranslations } from "next-intl";
 
 import { getLocalStorageValue, setLocalStorageValue } from "@/lib/local-storage.client";
 
-// 세션 입력창의 전송/줄바꿈 키 조합. 순수 프런트엔드 환경설정이라 localStorage 에만
-// 저장하고 서버에 저장하지 않으며 계정과 동기화되지 않는다. 그래서 브라우저를 바꾸면
-// 다시 설정해야 한다. issue #39 참고: 0.3.2 가 Ctrl+Enter 전송을 Enter 전송으로 바꿨고,
-// 여기서 옛 키 조합을 선택지로 되살린다.
+// 会话输入框的发送/换行按键组合。属纯前端配置，只保存在 localStorage，
+// 不保存到服务器，也不与账号同步。因此更换浏览器后需要重新设置。
+// 参考 issue #39：0.3.2 将 Ctrl+Enter 发送改为 Enter 发送，
+// 这里把旧的按键组合重新作为选项提供。
 export type ChatSendMode = "enter" | "ctrl-enter";
 
 export const CHAT_SEND_MODE_KEY = "artex_chat_send_mode";
 export const DEFAULT_CHAT_SEND_MODE: ChatSendMode = "enter";
 
-// 설정 화면의 전송 방식 드롭다운에 쓰는 선택지. 라벨은 로케일에 따라 달라지므로 모듈
-// 상수가 아니라 훅으로 돌려준다(순수 모듈에 한국어를 하드코딩하면 zh 로케일이 한국어로
-// 깨진다). value 는 안정 식별자라 localStorage 키·동작 판정에 그대로 쓴다.
+// 设置界面发送方式下拉框使用的选项。标签随 locale 变化，因此不放在模块
+// 常量中，而是通过 hook 返回（在纯模块里硬编码韩语会让 zh locale 显示为韩语）。
+// value 是稳定标识符，可直接用于 localStorage 键与行为判定。
 export function useChatSendModeOptions(): { value: ChatSendMode; label: string }[] {
   const t = useTranslations("chatSendMode.option");
   return [
@@ -30,9 +30,9 @@ function parseMode(raw: string | null): ChatSendMode {
   return raw === "ctrl-enter" || raw === "enter" ? raw : DEFAULT_CHAT_SEND_MODE;
 }
 
-// 같은 탭 안의 구독자 집합. localStorage 의 storage 이벤트는 "다른" 탭에서만 발생하므로,
-// 현재 탭에서 설정을 바꾼 뒤에는 emit 으로 같은 탭의 입력창에 알려야 한다. 그러지 않으면
-// 새로고침해야 반영된다.
+// 同一标签页内的订阅者集合。localStorage 的 storage 事件只在“其他”标签页触发，
+// 因此在当前标签页修改设置后，必须通过 emit 通知同一标签页的输入框。否则
+// 需要刷新页面才能生效。
 const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
@@ -44,14 +44,14 @@ function subscribe(listener: () => void) {
   };
 }
 
-// 문자열 리터럴을 돌려주므로 Object.is 가 값으로 비교해 useSyncExternalStore 가 무한
-// 루프에 빠지지 않는다.
+// 返回字符串字面量，因此 Object.is 按值比较，useSyncExternalStore 不会陷入
+// 无限循环。
 function getSnapshot(): ChatSendMode {
   return parseMode(getLocalStorageValue(CHAT_SEND_MODE_KEY));
 }
 
-// 서버에는 localStorage 가 없으므로 먼저 기본값을 렌더하고, hydrate 후 getSnapshot 이
-// 값을 바로잡는다.
+// 服务端没有 localStorage，所以先渲染默认值，hydrate 后再由 getSnapshot
+// 修正取值。
 function getServerSnapshot(): ChatSendMode {
   return DEFAULT_CHAT_SEND_MODE;
 }
@@ -65,12 +65,11 @@ export function setChatSendMode(mode: ChatSendMode) {
   for (const listener of listeners) listener();
 }
 
-// shouldSubmitOnKey 는 한 번의 키 입력이 전송에 해당하는지 판단한다.
-// isComposing / keyCode 229 는 한국어·중국어 등 입력기가 글자를 조합 중인 상태이므로
-// 반드시 통과시킨다. 그러지 않으면 Enter 로 글자를 확정할 때 잘못 전송된다.
-// enter 모드는 Shift 만 제외해 0.3.2 의 동작과 글자 하나까지 똑같이 유지한다(설정을
-// 바꾸지 않은 사용자의 조작감이 변하지 않는다). ctrl-enter 모드는 Ctrl 과 Cmd(macOS)를
-// 함께 받는다.
+// shouldSubmitOnKey 判断一次按键是否对应发送。
+// isComposing / keyCode 229 表示韩语·中文等输入法正在组合字符，
+// 必须直接放行。否则用 Enter 确认字符时会误发送。
+// enter 模式只排除 Shift，与 0.3.2 的行为逐字保持一致（未修改设置的
+// 用户操作手感不变）。ctrl-enter 模式同时接受 Ctrl 与 Cmd（macOS）。
 export function shouldSubmitOnKey(e: React.KeyboardEvent, mode: ChatSendMode): boolean {
   if (e.key !== "Enter") return false;
   if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return false;

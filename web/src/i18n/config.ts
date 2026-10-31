@@ -1,14 +1,14 @@
-// 지원 locale 과 기본값. artex-global 은 영어를 기본으로 하고, 한국어·중국어·스페인어·일본어를
-// 더해 다섯 언어를 사용자 설정으로 전환할 수 있다. 중국어("zh")는 상류 원문 대조용으로도 함께 둔다.
+// 支持的 locale 与默认值。本项目以中文为源语言、默认使用中文，并保留英语、韩语、
+// 西班牙语、日语四种语言供用户设置切换。
 export const LOCALES = ["en", "ko", "zh", "es", "ja"] as const;
 export type Locale = (typeof LOCALES)[number];
 
-// 기본 표시 언어는 영어다. 한국어·중국어·스페인어·일본어는 설정으로 전환하는 언어다. 빌드 시
-// NEXT_PUBLIC_LOCALE 로 덮어쓸 수 있고, 실행 중에는 사용자가 설정 화면에서 고른 값(쿠키·localStorage)이 최종 결정권을 가진다.
-export const DEFAULT_LOCALE: Locale = "en";
+// 默认显示语言为中文。英语、韩语、西班牙语、日语通过设置切换。构建时可用
+// NEXT_PUBLIC_LOCALE 覆盖，运行时用户在设置界面选择的值（Cookie·localStorage）拥有最终决定权。
+export const DEFAULT_LOCALE: Locale = "zh";
 
-// 언어 선택기에 보여 주는 각 locale 의 자국어 표기. 어떤 언어로 보고 있든 자기 언어
-// 이름은 그 언어로 읽혀야 하므로 번역 대상이 아니라 고정 표기로 둔다.
+// 语言选择器中展示的各 locale 的自有语言名称。无论以哪种语言查看，母语名称都应以
+// 该语言呈现，因此不作为翻译对象，而使用固定写法。
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
   ko: "한국어",
@@ -17,20 +17,20 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   ja: "日本語",
 };
 
-// 사용자가 고른 표시 언어를 저장하는 키. 화면은 localStorage 값을 읽는다. 쿠키에도 같은
-// 값을 써 두지만 지금은 읽는 곳이 없다(서버가 언어를 판별해야 할 때를 위해 남겨 둔다).
+// 保存用户所选显示语言的键。界面读取 localStorage 的值。Cookie 中也写入同样的值，
+// 但目前没有读取它的地方（留待服务端需要判断语言时使用）。
 export const LOCALE_COOKIE = "artex_locale";
 export const LOCALE_STORAGE_KEY = "artex_locale";
 
-// 임의 문자열이 지원 locale 인지 좁혀 주는 가드.
+// 用于将任意字符串收窄为受支持 locale 的守卫。
 export function isLocale(raw: unknown): raw is Locale {
   return typeof raw === "string" && (LOCALES as readonly string[]).includes(raw);
 }
 
-// 활성 locale 을 빌드 시점에 결정한다. 정적 내보내기(next.config 의 output: "export")와
-// 호환되어야 하므로 cookies()·headers() 같은 동적 API 를 쓰지 않고 환경변수만 읽는다.
-// NEXT_PUBLIC_LOCALE 이 비었거나 지원 목록 밖이면 기본값으로 떨어진다. 이 값은 서버
-// 프리렌더의 초기 HTML 에만 쓰이고, 실제 사용자 표시 언어는 클라이언트에서 쿠키로 덮는다.
+// 在构建时决定当前 locale。为兼容静态导出（next.config 的 output: "export"），
+// 不使用 cookies()·headers() 等动态 API，只读取环境变量。
+// NEXT_PUBLIC_LOCALE 为空或不在支持列表内时回退到默认值。该值只用于服务端
+// 预渲染的初始 HTML，实际用户显示语言会由客户端通过 Cookie 覆盖。
 export function resolveLocale(): Locale {
   const raw = process.env.NEXT_PUBLIC_LOCALE;
   return isLocale(raw) ? raw : DEFAULT_LOCALE;

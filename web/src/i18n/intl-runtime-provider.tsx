@@ -13,9 +13,8 @@ import zhMessages from "../../messages/zh.json";
 import type { Locale } from "./config";
 import { useActiveLocale } from "./locale-store";
 
-// 다섯 언어 메시지를 모두 정적으로 번들해 둔다. 그래야 사용자가 설정 화면에서 언어를
-// 바꿀 때 재빌드나 페이지 새로고침, 비동기 로딩 없이 그 자리에서 모든 문구가 선택한
-// 언어로 다시 렌더링된다(정적 내보내기 output: "export" 와도 호환된다).
+// 静态打包全部五种语言的消息。这样用户在设置界面切换语言时，无需重新构建、刷新页面
+// 或异步加载，所有文案都会就地在所选语言下重新渲染（也与静态导出 output: "export" 兼容）。
 const MESSAGES: Record<Locale, Record<string, unknown>> = {
   en: enMessages as Record<string, unknown>,
   ko: koMessages as Record<string, unknown>,
@@ -24,22 +23,22 @@ const MESSAGES: Record<Locale, Record<string, unknown>> = {
   ja: jaMessages as Record<string, unknown>,
 };
 
-// 실행 환경(브라우저·프리렌더 서버)의 시간대.
+// 运行环境（浏览器·预渲染服务器）的时区。
 const TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-// 실행 중 언어 전환을 담당하는 프로바이더. 루트 레이아웃의 NextIntlClientProvider 를
-// 대신해, 사용자가 고른 활성 locale(쿠키·localStorage)로 messages 를 골라 공급한다.
+// 负责运行时语言切换的 Provider。它替代根布局的 NextIntlClientProvider，
+// 按用户选择的当前 locale（Cookie·localStorage）挑选并供给 messages。
 export function IntlRuntimeProvider({ children }: Readonly<{ children: ReactNode }>) {
   const locale = useActiveLocale();
 
-  // 언어가 바뀌면 <html lang> 도 맞춘다. 루트 레이아웃이 서버에서 심은 초기 lang 을
-  // 클라이언트 선택값으로 덮어, 스크린 리더·브라우저 번역이 올바른 언어로 동작하게 한다.
+  // 语言变化时同时调整 <html lang>。用客户端选择值覆盖根布局由服务端写入的
+  // 初始 lang，使屏幕阅读器·浏览器翻译按正确语言工作。
   React.useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
 
-  // 루트 레이아웃의 프로바이더와 달리 서버 요청 설정을 물려받지 않으므로 timeZone 을
-  // 직접 넘긴다. 빠지면 next-intl 이 프리렌더 중 ENVIRONMENT_FALLBACK 오류를 남긴다.
+  // 与根布局的 Provider 不同，这里不继承服务端请求配置，因此直接传入 timeZone。
+  // 若省略，next-intl 会在预渲染期间报 ENVIRONMENT_FALLBACK 错误。
   return (
     <NextIntlClientProvider locale={locale} messages={MESSAGES[locale]} timeZone={TIME_ZONE}>
       {children}

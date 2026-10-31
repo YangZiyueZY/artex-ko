@@ -178,19 +178,21 @@ function toolInputText(tool: string, raw: string): string {
   return raw;
 }
 
-// InterceptCard renders an inline intercept_request approval card. The pending_id
-// is extracted from the summary (format: "도구 X 승인 요청 (#N)") so buttons are
-// available immediately without waiting for the detail load.
+// InterceptCard 渲染内联的 intercept_request 审批卡片。pending_id
+// 从 summary 中提取（后端格式：“工具 X 审批请求 (#N)”），因此按钮
+// 无需等待详情加载即可立即使用。
 function InterceptCard({ step, getDetail }: { step: Activity; getDetail: (seq: number) => Promise<string> }) {
   const t = useTranslations("transcript");
-  // extract pending_id from summary: "도구 Bash 승인 요청 (#42)"
+  // 从 summary 提取 pending_id：后端文案形如“工具 Bash 审批请求 (#42)”
   const pendingId = React.useMemo(() => {
     const m = /\(#(\d+)\)/.exec(step.summary);
     return m ? parseInt(m[1], 10) : null;
   }, [step.summary]);
 
   const toolName = React.useMemo(() => {
-    const m = /도구\s+(\S+)\s+승인/.exec(step.summary);
+    // 优先匹配当前中文摘要“工具 X 审批请求”；同时兼容汉化前落库的历史记录
+    // （旧韩文摘要“도구 X 승인 요청”），避免旧审批卡片的工具名退化为整条摘要。
+    const m = /工具\s+(\S+)\s+审批请求/.exec(step.summary) ?? /도구\s+(\S+)\s+승인/.exec(step.summary);
     return m ? m[1] : step.summary;
   }, [step.summary]);
 

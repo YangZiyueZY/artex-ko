@@ -1,8 +1,8 @@
 import * as React from "react";
 
 const MOBILE_BREAKPOINT = 768;
-// 사이드바가 펼쳐진 채 본문 폭이 좁아지면 표·카드가 겹친다(768~1279px 구간).
-// 이 너비 미만에서는 사이드바를 아이콘 모드로 자동 접어 본문 폭을 확보한다.
+// 侧边栏展开时若正文宽度变窄，表格·卡片会重叠（768~1279px 区间）。
+// 低于该宽度时自动把侧边栏折叠为图标模式，以保证正文宽度。
 export const TABLET_BREAKPOINT = 1280;
 
 function useBreakpoint(breakpoint: number) {
@@ -23,8 +23,8 @@ export function useIsMobile() {
   return !!useBreakpoint(MOBILE_BREAKPOINT);
 }
 
-// 태블릿 폭(768~1279px) 여부. 초기 렌더(측정 전)에는 undefined 를 그대로 돌려줘,
-// 호출부가 "아직 모름"과 "false"를 구분할 수 있게 한다.
+// 是否为平板宽度（768~1279px）。初始渲染（测量前）原样返回 undefined，
+// 以便调用方区分“尚未可知”与“false”。
 export function useIsTablet() {
   return useBreakpoint(TABLET_BREAKPOINT);
 }

@@ -88,12 +88,12 @@ function SidebarProvider({
     [setOpenProp, open]
   )
 
-  // 태블릿 폭(768~1279px)에서는 사이드바를 아이콘 모드로 자동 접어 본문 폭을 확보하고,
-  // 데스크톱 폭으로 넓어지면 다시 펼친다. 모바일(<768px)은 offcanvas 로 따로 처리되므로 제외한다.
+  // 平板宽度（768~1279px）时自动把侧边栏折叠为图标模式以保证正文宽度，
+  // 变宽到桌面宽度后再展开。移动端（<768px）由 offcanvas 单独处理，因此不在此列。
   //
-  // 초기 로드 시에는 태블릿 폭일 때만 접는다(본문이 좁아 겹침을 막아야 하므로). 데스크톱 폭에서는
-  // 쿠키에 저장된 사용자 선택(접힘/펼침)을 그대로 존중해 강제로 펼치지 않는다. 이후 데스크톱↔태블릿
-  // 경계를 넘을 때만 자동 전환하므로, 같은 구간 안에서 사용자가 직접 토글한 상태는 덮어쓰지 않는다.
+  // 初始加载时只在平板宽度下折叠（正文变窄需要防止重叠）。桌面宽度下
+  // 尊重 Cookie 中保存的用户选择（折叠/展开），不强制展开。之后仅在跨越桌面↔平板
+  // 边界时才自动切换，因此同一区间内用户手动切换的状态不会被覆盖。
   const prevIsTablet = React.useRef<boolean | undefined>(undefined)
   React.useEffect(() => {
     if (isTablet === undefined || isMobile) {
@@ -102,7 +102,7 @@ function SidebarProvider({
     }
     const firstResolve = prevIsTablet.current === undefined
     if (firstResolve) {
-      // 첫 측정: 태블릿이면 접고, 데스크톱이면 저장된 상태를 유지한다.
+      // 首次测量：平板则折叠，桌面则保持已保存的状态。
       if (isTablet) setOpen(false)
     } else if (prevIsTablet.current !== isTablet) {
       setOpen(!isTablet)
