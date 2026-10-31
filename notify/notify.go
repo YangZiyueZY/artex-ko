@@ -57,11 +57,10 @@ func labelLang() string {
 			return v
 		}
 	}
-	return "ko"
+	return "zh"
 }
 
-// severityLabels / statusLabels hold the per-language display strings. "ko" keeps
-// the exact Korean values the localization golden tests pin.
+// severityLabels / statusLabels 保存各语言的显示字符串；本地化金测试锁定各语言的确切取值。
 var severityLabels = map[string]map[string]string{
 	"ko": {"critical": "🔴 심각", "high": "🟠 높음", "medium": "🟡 중간", "low": "🔵 낮음"},
 	"en": {"critical": "🔴 Critical", "high": "🟠 High", "medium": "🟡 Medium", "low": "🔵 Low"},

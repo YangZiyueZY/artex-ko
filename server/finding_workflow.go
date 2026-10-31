@@ -14,24 +14,24 @@ import (
 	actool "github.com/Autumn-27/norma/tool"
 )
 
-// 현지화 보존 판정(artex-global): 이 파일의 중국어 문자열은 전부 에이전트(두뇌) 입력이고
-// HTTP 사용자 응답으로 나가지 않는다. BRIEF 경계 #1(두뇌는 번역하지 않는다 — 성능
-// 보존)에 따라 원문을 그대로 둔다. 이 파일에 writeErr 는 0 — 사용자 노출 경로가 없다.
-// 싱크는 세 갈래다(행 번호 대신 심볼로 가리킨다. 편집으로 밀려도 유효하게).
+// 本地化保留判定（artex-global）：本文件中的中文（源语言）字符串全部是智能体（大脑）输入，
+// 不会作为 HTTP 用户响应发出。按 BRIEF 边界 #1（不本地化智能体大脑 —— 保留性能），
+// 保持原样。本文件中没有任何 writeErr —— 不存在用户可见路径。
+// 相关位置共有三类（用符号而不是行号指代，以免编辑后被推移失效）。
 //
-//	(1) 도구 설명·스키마 description: report_finding 의 evidence_hint_id·hints.text,
-//	    bind_finding_traffic 의 wrTool 설명·finding_id strParam. LLM 이 읽는 도구
-//	    정의라 두뇌 입력이다.
-//	(2) 마이그레이션 매칭 문자열: seedFindingWorkflowTools 의 legacy 변수(옛 traffic_search
-//	    설명)는 traffic.TrafficSearchDescription(그 자체도 중국어 도구 설명)으로 올리는
-//	    UPDATE … WHERE description=$2 의 비교값이다. 번역하면 기존 행과 매칭되지 않아
-//	    업그레이드가 멈춘다.
-//	(3) actool.Errorf 도구 결과: agentFindingTrafficAccess 의 오류들은 유일 호출처
-//	    toolBindFindingTraffic(이 파일)과 get_finding_traffic(finding_traffic.go) 두
-//	    도구에서 모두 actool.Errorf(err.Error()) 로 감싸 에이전트에게 되돌아가고,
-//	    toolBindFindingTraffic 의 바인딩 비활성·빈 traffic_refs 문구는 직접 actool.Errorf 다.
+//	(1) 工具描述·schema description：report_finding 的 evidence_hint_id·hints.text，
+//	    bind_finding_traffic 的 wrTool 描述·finding_id strParam。这些是 LLM 读取的工具
+//	    定义，属于大脑输入。
+//	(2) 迁移匹配字符串：seedFindingWorkflowTools 的 legacy 变量（旧 traffic_search
+//	    描述）是升级到 traffic.TrafficSearchDescription（本身也是中文工具描述）的
+//	    UPDATE … WHERE description=$2 的比较值。本地化后与现有行匹配不上，
+//	    升级会卡住。
+//	(3) actool.Errorf 工具结果：agentFindingTrafficAccess 的错误在唯一调用方
+//	    toolBindFindingTraffic（本文件）与 get_finding_traffic（finding_traffic.go）两
+//	    个工具中都经 actool.Errorf(err.Error()) 包装后回传给智能体；
+//	    toolBindFindingTraffic 的“绑定未启用”“无 traffic_refs”文案则直接走 actool.Errorf。
 //
-// 다음 기여자가 "마저 번역"하다 벤치마크된 두뇌 입력을 바꾸지 않도록 둔다(F16 계열).
+// 这里特意保留，避免后续贡献者“顺手本地化”时改掉已基准测试的大脑输入（F16 系列）。
 func (s *Server) seedFindingWorkflowTools() {
 	const hostSearchDescriptionFlag = "finding_workflow_tools_v3_host_search_description"
 	if value, _, _ := s.m.pg.GetSetting(hostSearchDescriptionFlag); value != "true" {

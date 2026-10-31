@@ -12,15 +12,15 @@ import (
 
 const FindingRetestAgentKey = "retester"
 
-// 재검증(finding_retest) 종결 사유. finding_retests.error 컬럼에 저장돼 재검증 패널
-// (finding-retest-panel) 의 item.error 로 노출된다(사용자 노출, server/conversations.go 의
-// 형제 사유 convRetest* 와 같은 컬럼·패널이라 함께 한국어로 둔다 — F9). retestNoConclusionReason
-// 은 에이전트가 결론 없이 완료했을 때 caller 가 넘긴 사유를 덮어쓰는 폴백이고,
-// retestServiceRestartReason 은 재시작 복구(RecoverFindingRetests)가 미완 재검증을 봉인할 때 쓴다.
-// 작은따옴표 없는 상수라 SQL 리터럴 자리에 그대로 이어 붙여도 안전하다.
+// 复验（finding_retest）的终止原因。它们存进 finding_retests.error 列，并作为复验面板
+// （finding-retest-panel）的 item.error 展示给用户；与 server/conversations.go 里的兄弟原因
+// convRetest* 共用同一列与同一面板，因此一并使用简体中文 —— F9。retestNoConclusionReason 是
+// 智能体未给结论就结束时的兜底，用来覆盖调用方传入的原因；retestServiceRestartReason 用于
+// 重启恢复（RecoverFindingRetests）封存未完成的复验。这些常量不含单引号，
+// 直接拼进 SQL 字面量也安全。
 const (
-	retestNoConclusionReason   = "에이전트가 재검증 결론을 저장하지 않았습니다. 대화를 확인한 뒤 다시 재검증해 주세요"
-	retestServiceRestartReason = "서비스가 재시작되어 재검증이 중단되었습니다. 다시 시작해 주세요"
+	retestNoConclusionReason   = "智能体未保存复验结论。请查看对话后重新发起复验"
+	retestServiceRestartReason = "服务已重启，复验被中断。请重新发起复验"
 )
 
 var ErrRetestNotRunning = errors.New("本次复测已结束或尚未开始，请从漏洞详情发起新的复测")

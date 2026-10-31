@@ -12,14 +12,14 @@ import (
 	"github.com/Autumn-27/artex/db"
 )
 
-// admitPausedTask 재개 경로(requirePaused)의 사전 조건 검증 오류 문구다. 두 문구는
-// 단건(server.go:1194 → writeErr 409)·배치(task_control.go:298 → items[].error) 작업 제어
-// 응답으로만 사용자에게 노출된다. 오케스트레이터 경로(orchestration.go:343)는 action="pause"
-// 로 고정이라 재개 검증에 닿지 않으므로 두뇌 입력이 아니다. 용어는 task_control.go 의
-// 종료 상태·일시정지 문구와 맞춘다(resume=재개).
+// admitPausedTask 重启路径（requirePaused）的前置条件校验错误文案。这两条文案只在
+// 单条（server.go:1194 → writeErr 409）·批量（task_control.go:298 → items[].error）任务控制
+// 响应中暴露给用户。编排器路径（orchestration.go:343）固定 action="pause"，
+// 不会触及重启校验，因此不属于大脑输入。术语与 task_control.go 的
+// 终止状态·暂停文案对齐（resume=恢复）。
 const (
-	errGoalResumeTerminal  = "종료된 작업은 재개할 수 없습니다"
-	errGoalResumeNotPaused = "일시정지된 작업만 재개할 수 있습니다"
+	errGoalResumeTerminal  = "已终止的任务无法恢复"
+	errGoalResumeNotPaused = "只能恢复已暂停的任务"
 )
 
 type goalSpec struct {
@@ -27,22 +27,22 @@ type goalSpec struct {
 	VulnClass string
 }
 
-// launchTask runs the shared post-creation sequence for a task created via ANY
-// path (HTTP createTask 或 orchestration spawn_task),避免两处复制粘贴:
-//  1. seed 根资产,喂给事件驱动 loop;
-//  2. 可选种子意图,worker 免等首轮 planner 直接开跑;
-//  3. 后台异步做目标分解(发「0차 목표 분해」round + LLM 分解步骤 + 逐条 goal,页面可见),
-//     分解完再 engine.Run —— 引擎在 goal 节点就绪后才启动,避免 planner 抢在 goal 之前跑的竞态。
+// launchTask 为通过任意路径（HTTP createTask 或 orchestration spawn_task）创建的任务
+// 执行共享的创建后流程，避免两处复制粘贴：
+//   1. 预置根资产，喂给事件驱动 loop；
+//   2. 可选地预置种子意图，让 Worker 免等首轮 Planner 直接开跑；
+//   3. 后台异步做目标分解（发「第 0 次目标分解」round + LLM 分解步骤 + 逐条 goal，页面可见），
+//      分解完再 engine.Run —— 引擎在 goal 节点就绪后才启动，避免 Planner 抢在 goal 之前跑的竞态。
 //
-// 异步(goroutine)所以调用方立即返回,两条路径行为一致:秒建任务、后台拆目标。
-// 표시 전용 활동 요약(작업 단위·node_id 없음·전사에만 노출·되먹임 경로 미접촉).
-// 초기 목표 분해 라운드와 동시 실행 대기열 상태 안내다. 한국어화해도 두뇌 입력
-// (BRIEF 경계 #1)을 건드리지 않는다. 포맷 인자(%d)는 원형 보존. [[G132]]
+// 异步（goroutine）执行，所以调用方立即返回，两条路径行为一致：秒建任务、后台拆目标。
+// 显示专用的活动摘要（任务级·无 node_id·只暴露在转写·不触及反馈路径）。
+// 这是初始目标分解轮与并发执行队列状态的提示。中文化也不会触碰大脑输入
+// （BRIEF 边界 #1）。格式参数（%d）保持原样。[[G132]]
 const (
-	goalBreakdownRound0Summary       = "0차 목표 분해"
-	queuedConcurrencyLimitSummaryFmt = "대기열 등록: 동시 실행 상한 %d개에 도달해, 빈자리가 나면 자동으로 시작합니다"
-	queuedNoLLMSummary               = "대기열 등록: 현재 실행 가능한 LLM 설정이 없어, 설정이 복구되면 자동으로 시작합니다"
-	queuedFIFOSummary                = "대기열 등록: 먼저 대기 중인 작업이 있어, FIFO 순서대로 자동으로 시작합니다"
+	goalBreakdownRound0Summary       = "第 0 次目标分解"
+	queuedConcurrencyLimitSummaryFmt = "已加入队列：并发执行上限 %d 个已满，有空位时自动开始"
+	queuedNoLLMSummary               = "已加入队列：当前没有可执行的 LLM 配置，配置恢复后自动开始"
+	queuedFIFOSummary                = "已加入队列：前面还有排队中的任务，将按 FIFO 顺序自动开始"
 )
 
 func (s *Server) launchTask(t *Task, seedText string, seedFirstIntent bool) {

@@ -26,11 +26,10 @@ func TestMain(m *testing.M) {
 	// background loop itself, so disable it suite-wide for determinism; the
 	// loop's dispatch is covered through direct stepRealtime/stepDigest calls.
 	os.Setenv(notifyBackgroundDisabledEnv, "1")
-	// The server suite verifies the Korean localization of user-facing output,
-	// so pin the default output language to Korean for the whole test binary.
-	// Production defaults to English (config.DefaultLanguage); individual tests
-	// that need another language set it explicitly (t.Setenv / the settings table).
-	os.Setenv("ARTEX_LANG", "ko")
+	// 服务端测试套件校验的是用户可见输出的中文化（源语言=简体中文），因此把整个测试
+	// 二进制的默认输出语言固定为 zh（与 config.DefaultLanguage 一致）。需要其他语言的
+	// 用例自行显式设置（t.Setenv / settings 表），测 ko 回落时就设 "ko"。
+	os.Setenv("ARTEX_LANG", "zh")
 
 
 	dsn, _, err := db.DSN()

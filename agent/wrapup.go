@@ -41,11 +41,11 @@ var wrapupTurnDefaults = map[string]int{
 
 const genericWrapupTurns = 10
 
-const plannerWrapUpDefault = "이번 계획 라운드의 단계 예산이 곧 소진됩니다. 다만 【이번 라운드】만 끝나는 것이며, 시스템은 이후에도 상황 변화에 따라 당신을 다시 깨워 계획을 이어가게 합니다. 작업 자체가 끝나는 것이 아니므로 여기서 전체 계획을 마무리 지을 필요는 없습니다. 이번 라운드에서 이미 명확히 판단한 결론은 실제로 반영하여 이번 라운드가 헛되지 않게 하되, 【마무리를 위해 억지로 의도를 지어내지는】 마십시오(이번 라운드에 의도가 0개인 것도 완전히 정상적인 결과입니다). (1) 【지금 바로 파견해야 할】 탐색 방향을 이미 판단했다면 add_intent 한 번으로 묶어서 제출합니다(이미 정한 것은 묵히지 말고 바로 보냅니다). (2) 어떤 발견이나 사실로 이미 달성이 증명된 목표는 prove_goal 로 met 표시합니다(빠뜨리지 마십시오). (3) 단계를 나눠야 하는 직렬 익스플로잇 체인을 식별했다면 TodoWrite 로 기록하여 다음에 깨어났을 때 이어서 파견할 수 있게 합니다. 다 끝냈으면 이번 라운드를 바로 종료하며, 요약 텍스트는 출력하지 않습니다."
+const plannerWrapUpDefault = "本次规划轮次的步骤预算即将耗尽。但结束的只是【本轮】，之后系统仍会随着情况变化再次唤醒你继续规划。任务本身并未结束，因此不需要在这里收尾整个计划。本轮已经明确判断出的结论要真正落实下去，别让本轮白跑，但【不要为了收尾而硬编意图】（本轮意图为 0 也是完全正常的结果）。（1）若已判断出【现在就应派出】的探索方向，用一次 add_intent 打包提交（已定的事不要压着，直接发出）。（2）已被某个发现或事实证明达成的目标，用 prove_goal 标为 met（不要遗漏）。（3）若识别出需要分阶段的串行利用链，用 TodoWrite 记录下来，以便下次唤醒时接着派出。全部做完即结束本轮，不输出总结文本。"
 
-const mainAgentWrapUpDefault = "단계 예산이 곧 소진되어 이번 상호작용이 끝나려 합니다. 더 이상 새로운 탐색이나 조작을 시작하지 마십시오. **한 문장짜리 순수 텍스트로만** 현재 진행 상황, 핵심 결론, 그리고 권장하는 다음 단계를 사용자에게 한국어로 요약하십시오."
+const mainAgentWrapUpDefault = "步骤预算即将耗尽，本次交互行将结束。不要再开始新的探索或操作。请**只用一句话的纯文本**，用简体中文向用户总结当前进展、核心结论以及建议的下一步。"
 
-const genericWrapUpDefault = "예산 소진으로 곧 종료됩니다. 먼저 완료했지만 아직 저장하지 않은 결과를 기록한 뒤, **한 문장짜리 순수 텍스트로만** 무엇을 했고 어떤 핵심 결론을 얻었는지 한국어로 요약하십시오(이 한 문장이 이번 실행의 결과로 표시됩니다)."
+const genericWrapUpDefault = "预算耗尽即将结束。请先记录已完成但尚未保存的结果，再**只用一句话的纯文本**，用简体中文总结做了什么、得到了哪些核心结论（这一句话将作为本次执行的结果显示）。"
 
 // WrapupDefault returns the built-in default wrap-up prompt for an agent key —
 // used by the admin UI as the "restore default" value and empty-field placeholder.
@@ -99,22 +99,20 @@ func wrapupSettlement(agentKey string, disabledTools []string) *harness.Settleme
 	}
 }
 
-// withWrapupLang 은 마무리 프롬프트 뒤에 출력 언어 지시(langDirective)를 덧붙인다.
-// 마무리 프롬프트는 시스템 프롬프트와 달리 langDirective 꼬리가 자동으로 붙지 않으므로,
-// 이렇게 직접 붙여야 사용자에게 보이는 마지막 한 문장 요약이 선택한 표시 언어를 따른다.
-// 마무리 산문 자체는 모델이 읽는 운영 지시문(한국어 유지)이고, 이 꼬리가 최고 우선순위로
-// 사용자 노출 텍스트의 언어만 강제한다. 요약을 내지 않는 planner 계열에는 무해하다.
-// 기본 언어 ko 에서는 꼬리를 붙이지 않는다. 시스템 프롬프트의 langDirective 가 이미
-// 한국어 출력을 강제하고 있어, 기본 경로의 모델 입력을 이전 버전과 같게 둔다(벤치마크 드리프트 방지).
+// withWrapupLang 在收尾提示词后面追加输出语言指令（langDirective）。
+// 收尾提示词与系统提示词不同，不会自动带上 langDirective 这条尾巴，
+// 因此必须在这里手动追加：用户看到的最后一句总结才会遵循所选展示语言。
+// 收尾正文本身是给模型读的操作指令（现为简体中文），这条尾巴以最高优先级
+// 只强制用户可见文本的语言；对不产出总结的 planner 系没有副作用。
+// withWrapupLang 给收尾提示词追加“用当前输出语言作答”的指令。
+// 内置收尾提示词正文已固定用简体中文书写，因此这里不再对任何语言做特判：
+// 用户选择韩语/英语/西班牙语/日语时，同样追加对应的语言指令，
+// 否则模型会沿用提示词正文的中文作答。
 func withWrapupLang(prompt string) string {
 	if strings.TrimSpace(prompt) == "" {
 		return prompt
 	}
-	lang := resolveOutputLang()
-	if lang == "ko" {
-		return prompt
-	}
-	return prompt + langDirective(lang)
+	return prompt + langDirective(resolveOutputLang())
 }
 
 // ---------- 任务级超时收尾词（见 docs/任务级超时与收尾设计.md）----------
@@ -135,9 +133,9 @@ var taskTimeoutWrapupDefaults = map[string]string{
 	"planner": plannerTaskTimeoutDefault,
 }
 
-const workerTaskTimeoutDefault = "**전체 작업이 시간 제한 상한에 도달하여 곧 종료됩니다**(이번 run 의 예산이 아니라 탐색 전체가 끝나는 시점입니다). 이것이 마지막 기회입니다. (1) 이미 식별했지만 아직 기록하지 않은 내용을 【전부】 저장합니다. 새 자산은 insert_assets, 탐색 결론과 사실은 record_fact, 확인된 취약점은 report_finding 으로 기록합니다. (2) 더 이상 어떤 새 명령이나 탐지도 시작하지 마십시오. (3) **맨 마지막에 한 문장짜리 순수 텍스트로만** 이번 의도에서 얻은 핵심 결론을 한국어로 요약하십시오."
+const workerTaskTimeoutDefault = "**整个任务已到达时长上限，即将结束**（不是本次 run 的预算，而是整个探索的终点）。这是最后一次机会。（1）把已经识别但尚未记录的内容【全部】保存：新资产用 insert_assets 记录，探索结论与事实用 record_fact 记录，已确认的漏洞用 report_finding 记录。（2）不要再开始任何新命令或探测。（3）**最后只用一句话的纯文本**，用简体中文总结本次意图得到的核心结论。"
 
-const plannerTaskTimeoutDefault = "**전체 작업이 시간 제한 상한에 도달하여 곧 종료됩니다**(이번 라운드가 아니라 작업 전체가 종료됩니다). 현재까지의 【모든】 사실과 발견을 근거로 마지막 목표 판정을 수행하십시오. 증거로 달성이 증명된 목표는 prove_goal 로 met 표시합니다(빠뜨리지 마십시오). **더 이상 어떤 새 의도도 생성하지 마십시오**(지금 의도를 파견해도 더 이상 실행되지 않습니다). 판정을 마치면 바로 종료하며, 요약 텍스트는 출력하지 않습니다."
+const plannerTaskTimeoutDefault = "**整个任务已到达时长上限，即将结束**（结束的不是本轮，而是整个任务）。请基于目前【所有】事实与发现做最后一次目标判定。有证据证明已达成的目标用 prove_goal 标为 met（不要遗漏）。**不要再产生任何新意图**（现在派出的意图也不会再被执行）。判定完成即结束，不输出总结文本。"
 
 // TaskTimeoutWrapupDefault 返回某 agent 的任务超时内置默认收尾词（供后台占位/恢复默认）。
 func TaskTimeoutWrapupDefault(agentKey string) string {

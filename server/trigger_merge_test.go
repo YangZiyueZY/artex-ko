@@ -97,20 +97,20 @@ func TestTaskContextHeaderTruncatesLongGoal(t *testing.T) {
 	}
 }
 
-// TestTriggerSynthesisChineseFramingPreserved 는 P3 트리거 메시지 합성부가 만드는 중국어
-// 프레이밍을 보존 대상(에이전트 두뇌 입력)으로 명시 고정한다(F10/F19 경계 판정). 이 문구들은
-// finalTriggerMessage → runTriggeredRun → ca.Chat 의 user 메시지로 들어가는 에이전트 입력이자
-// 전사에 노출되는 이중 용도라, BRIEF 경계 #1(두뇌는 번역하지 않는다 — 벤치마크 동작 보존)에
-// 따라 번역하면 안 된다. 위 머지/헤더 동작 테스트가 `【任务 #`·`── 触发 `·`共 N 个任务` 를
-// 이미 핀하지만, 작업 컨텍스트 헤더의 목표 프레이밍과 by-task 머지 안내는 아직 미핀이라
-// 여기서 보강한다(우발 한국어화 역회귀 가드 · conversations.go 보존 주석과 짝).
+// TestTriggerSynthesisChineseFramingPreserved 显式钉住 P3 触发消息合成器产出的中文
+// 框架文案，将其作为“保留对象”（智能体大脑输入，见 F10/F19 边界判定）。这些文案既是
+// finalTriggerMessage → runTriggeredRun → ca.Chat 中作为 user 消息送入的智能体输入，
+// 又会展示到转写里，属于双重用途，因此按 BRIEF 边界 #1（不翻译大脑——保留基准行为）
+// 不得翻译。上面的合并/头部行为测试已经钉住了 `【任务 #`、`── 触发 `、`共 N 个任务`，
+// 但任务上下文头部的目标框架与按任务合并的说明尚未钉住，这里补上
+// （防止偶发汉化的反向回归护栏，与 conversations.go 的保留注释成对）。
 func TestTriggerSynthesisChineseFramingPreserved(t *testing.T) {
-	// 작업 컨텍스트 헤더의 목표 프레이밍(（目标：…）) 보존 — 입력에 CJK 를 안 넣어 프레이밍만 검증.
+	// 任务上下文头部的目标框架（（目标：…））必须保留 — 输入里不放 CJK，只校验框架文案。
 	if h := taskContextHeader(7, "d", "g"); !strings.Contains(h, "（目标：") {
-		t.Fatalf("작업 컨텍스트 헤더의 목표 프레이밍이 바뀌었습니다(두뇌 입력 번역 금지): %q", h)
+		t.Fatalf("任务上下文头部中的目标表述发生了变化（禁止翻译大脑输入）：%q", h)
 	}
-	// by-task 머지 안내 프레이밍 보존.
+	// 按任务合并的说明框架必须保留。
 	if out := mergeTriggeredRuns(sameTaskFires(3)); !strings.Contains(out.message, "【本会话合并了") {
-		t.Fatalf("by-task 머지 안내 프레이밍이 바뀌었습니다(두뇌 입력 번역 금지): %q", out.message)
+		t.Fatalf("by-task 合并提示的表述发生了变化（禁止翻译大脑输入）：%q", out.message)
 	}
 }

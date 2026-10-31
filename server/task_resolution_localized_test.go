@@ -21,7 +21,7 @@ func TestTaskLLMResolutionLocalized(t *testing.T) {
 		{"reasonNoLLMAvailable", reasonNoLLMAvailable},
 		{"sourceNameGlobalConfig", sourceNameGlobalConfig},
 	} {
-		assertKoreanError(t, c.label, c.msg)
+		assertChineseError(t, c.label, c.msg)
 	}
 
 	// 2) Pin the two reasons reachable with no DB. resolutionFromProfile returns
@@ -36,7 +36,7 @@ func TestTaskLLMResolutionLocalized(t *testing.T) {
 	if missing.Reason != reasonLLMProfileMissing {
 		t.Fatalf("nil profile reason = %q, want %q", missing.Reason, reasonLLMProfileMissing)
 	}
-	assertKoreanError(t, "resolutionFromProfile(nil).Reason", missing.Reason)
+	assertChineseError(t, "resolutionFromProfile(nil).Reason", missing.Reason)
 
 	noKey := s.resolutionFromProfile(&db.LLMProfile{Name: "p", Format: "openai", Model: "m"}, "task_chain")
 	if noKey.Available {
@@ -45,5 +45,5 @@ func TestTaskLLMResolutionLocalized(t *testing.T) {
 	if noKey.Reason != reasonLLMProfileNoAPIKey {
 		t.Fatalf("blank-key reason = %q, want %q", noKey.Reason, reasonLLMProfileNoAPIKey)
 	}
-	assertKoreanError(t, "resolutionFromProfile(noKey).Reason", noKey.Reason)
+	assertChineseError(t, "resolutionFromProfile(noKey).Reason", noKey.Reason)
 }

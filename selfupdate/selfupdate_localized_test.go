@@ -1,11 +1,11 @@
 package selfupdate
 
-// 셀프 업데이트 경로의 사용자 노출 진행·오류 문구가 한국어로 나오는지 고정하는
-// 회귀 테스트(F20). update.go 의 updateHub 가 Stage 의 진행 콜백 메시지를 SSE
-// progress.message 로, Stage/FetchLatest/Rollback 의 반환 오류를 progress.error·
-// writeErr 본문·boot_notice 로 그대로 프런트엔드(update-card)에 노출하므로, 이 문구가
-// 중국어로 되돌아가면 사용자 화면이 반한반중으로 섞인다. 로그(log.Printf)·주석은 Z2라
-// 범위 밖이고, 여기서는 "한글이 있고 중국어 한자가 없다"만 단언한다.
+// 本文件钉住自更新路径上面向用户的进度·错误文案是简体中文（回归测试 F20）。
+// update.go 的 updateHub 会把 Stage 的进度回调消息作为 SSE progress.message 下发，
+// 并把 Stage/FetchLatest/Rollback 返回的错误原样送进 progress.error、writeErr 正文与
+// boot_notice，最终由前端（update-card）展示；所以这些文案一旦回退成别的语言，
+// 用户界面就会语言混杂。日志（log.Printf）与注释不在本测试范围，这里只断言
+// 「含中文汉字且不含韩文」。
 
 import (
 	"context"
@@ -33,23 +33,23 @@ func hasHanzi(s string) bool {
 	return false
 }
 
-// assertKoreanError 는 오류가 존재하고, 한글을 포함하며, 중국어 한자가 없음을 단언한다.
-// %w 로 감싼 하부 stdlib 오류의 영어는 허용된다(한자만 금지).
-func assertKoreanError(t *testing.T, label string, err error) {
+// assertChineseError 断言确实出错了，且错误文案含中文汉字、不含韩文。
+// 用 %w 包裹的下层 stdlib 错误里的英文是允许的（只禁韩文）。
+func assertChineseError(t *testing.T, label string, err error) {
 	t.Helper()
 	if err == nil {
-		t.Fatalf("%s: 오류를 기대했으나 nil 이었습니다", label)
+		t.Fatalf("%s: 期望出错，但结果为 nil", label)
 	}
 	msg := err.Error()
-	if !hasHangul(msg) {
-		t.Errorf("%s: 한글이 없습니다: %q", label, msg)
+	if !hasHanzi(msg) {
+		t.Errorf("%s：没有中文汉字：%q", label, msg)
 	}
-	if hasHanzi(msg) {
-		t.Errorf("%s: 중국어 한자가 남아 있습니다: %q", label, msg)
+	if hasHangul(msg) {
+		t.Errorf("%s：仍残留韩文：%q", label, msg)
 	}
 }
 
-// rtFunc 로 http.Client 에 가짜 응답을 주입한다. GitHub 에 실제로 접속하지 않는다.
+// rtFunc 用来给 http.Client 注入假响应，不会真的访问 GitHub。
 type rtFunc func(*http.Request) (*http.Response, error)
 
 func (f rtFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
@@ -64,57 +64,57 @@ func stubClient(status int, body string) *http.Client {
 	})}
 }
 
-// TestCheckURLErrorsLocalized: 기존 TestCheckURLRejectsNonGitHub 는 거부 여부만 보고
-// 문구 언어는 보지 않는다. 여기서는 두 거부 경로의 오류가 한국어인지 확인한다.
+// TestCheckURLErrorsLocalized：既有的 TestCheckURLRejectsNonGitHub 只看是否拒绝，
+// 不看文案语言。这里检查两条拒绝路径的错误都是简体中文。
 func TestCheckURLErrorsLocalized(t *testing.T) {
 	nonHTTPS := checkURL(mustParse(t, "http://api.github.com/x"))
-	assertKoreanError(t, "non-https", nonHTTPS)
+	assertChineseError(t, "non-https", nonHTTPS)
 	if !strings.Contains(nonHTTPS.Error(), "HTTPS") {
-		t.Errorf("non-https 오류에 HTTPS 표기가 없습니다: %q", nonHTTPS.Error())
+		t.Errorf("non-https 错误中缺少 HTTPS 字样: %q", nonHTTPS.Error())
 	}
 
 	nonGitHub := checkURL(mustParse(t, "https://evil.example.com/x"))
-	assertKoreanError(t, "non-github-host", nonGitHub)
+	assertChineseError(t, "non-github-host", nonGitHub)
 	if !strings.Contains(nonGitHub.Error(), "GitHub") {
-		t.Errorf("non-github 오류에 GitHub 표기가 없습니다: %q", nonGitHub.Error())
+		t.Errorf("non-github 错误中缺少 GitHub 字样: %q", nonGitHub.Error())
 	}
 }
 
-// TestFetchLatestErrorsLocalized: 버전 확인 경로의 네 가지 오류(요청 제한·미발행·기타
-// 상태·해석 실패·tag 누락)가 한국어인지 확인한다. 가짜 transport 로 네트워크를 쓰지 않는다.
+// TestFetchLatestErrorsLocalized：版本检查路径的五种错误（请求限流·未发布·其他
+// 状态·解析失败·tag 缺失）都是简体中文。用假 transport，不访问网络。
 func TestFetchLatestErrorsLocalized(t *testing.T) {
 	ctx := context.Background()
 
 	_, errRate := FetchLatest(ctx, stubClient(http.StatusForbidden, ""))
-	assertKoreanError(t, "rate-limited", errRate)
+	assertChineseError(t, "rate-limited", errRate)
 	if !strings.Contains(errRate.Error(), "60") {
-		t.Errorf("요청 제한 오류에 60 표기가 없습니다: %q", errRate.Error())
+		t.Errorf("请求限制错误中缺少 60 字样: %q", errRate.Error())
 	}
 
 	_, errNF := FetchLatest(ctx, stubClient(http.StatusNotFound, ""))
-	assertKoreanError(t, "not-found", errNF)
+	assertChineseError(t, "not-found", errNF)
 
 	_, errStatus := FetchLatest(ctx, stubClient(http.StatusInternalServerError, ""))
-	assertKoreanError(t, "bad-status", errStatus)
+	assertChineseError(t, "bad-status", errStatus)
 	if !strings.Contains(errStatus.Error(), "GitHub") {
-		t.Errorf("상태 오류에 GitHub 표기가 없습니다: %q", errStatus.Error())
+		t.Errorf("状态错误中缺少 GitHub 字样: %q", errStatus.Error())
 	}
 
 	_, errJSON := FetchLatest(ctx, stubClient(http.StatusOK, "{not json"))
-	assertKoreanError(t, "bad-json", errJSON)
+	assertChineseError(t, "bad-json", errJSON)
 
 	_, errTag := FetchLatest(ctx, stubClient(http.StatusOK, "{}"))
-	assertKoreanError(t, "missing-tag", errTag)
+	assertChineseError(t, "missing-tag", errTag)
 	if !strings.Contains(errTag.Error(), "tag") {
-		t.Errorf("tag 누락 오류에 tag 표기가 없습니다: %q", errTag.Error())
+		t.Errorf("缺少 tag 的错误中缺少 tag 字样: %q", errTag.Error())
 	}
 }
 
-// TestStageMissingAssetLocalized: 릴리스에 현재 플랫폼 패키지가 없으면 Stage 가
-// 내려받기 전에 한국어 오류로 멈춘다(FindAsset 실패 → 네트워크 접근 없음). 실행 환경에
-// 따라 checkWritable 가 먼저 막을 수도 있으나 그 오류도 한국어이므로 언어만 단언한다.
+// TestStageMissingAssetLocalized：发布版本里没有当前平台的包时，Stage 会在下载前
+// 就以中文错误停下（FindAsset 失败 → 不发起网络访问）。视运行环境不同，checkWritable
+// 可能先拦下来，但那个错误也是中文，所以这里只断言语言。
 func TestStageMissingAssetLocalized(t *testing.T) {
-	rel := &Release{TagName: "v9.9.9"} // Assets 비어 있음
+	rel := &Release{TagName: "v9.9.9"} // Assets 为空
 	err := Stage(context.Background(), &http.Client{}, rel, "0.0.1", nil)
-	assertKoreanError(t, "stage-missing-asset", err)
+	assertChineseError(t, "stage-missing-asset", err)
 }

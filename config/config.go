@@ -24,24 +24,21 @@ type Database struct {
 	SSLMode  string `json:"sslmode"`
 }
 
-// Config is the on-disk config file shape.
+// Config 是磁盘配置文件的结构。
 type Config struct {
 	Database Database `json:"database"`
 	SkillDir string   `json:"skill_dir"`
-	// Language is the bootstrap/default user-facing output language for the
-	// artex-global ("en"/"ko"/"zh"/"es"/"ja"). Empty → DefaultLanguage. At
-	// runtime a value stored in the settings table (edited in the UI) overrides it.
+	// Language 是启动时的默认用户可见输出语言（默认 "zh"，可选 "en"/"ko"/"es"/"ja"）。
+	// 为空则用 DefaultLanguage。运行期在设置表（UI 设置页）里选定的值优先生效。
 	Language string `json:"language"`
 }
 
-// SupportedLanguages lists the user-facing output languages artex-global can
-// switch between. Agent output, UI strings and backend messages all key off these.
+// SupportedLanguages 列出本项目可切换的用户可见输出语言。智能体输出、界面文案与后端消息都以它为键。
 var SupportedLanguages = []string{"en", "ko", "zh", "es", "ja"}
 
-// DefaultLanguage is the out-of-box user-facing language when nothing is
-// configured. artex-global defaults to English; Korean, Chinese, Spanish and
-// Japanese are selectable at runtime via the language setting (and ARTEX_LANG).
-const DefaultLanguage = "en"
+// DefaultLanguage 是没有任何配置时的出厂用户可见语言。本项目默认简体中文，运行时可
+// 通过语言设置（以及 ARTEX_LANG）切换为韩语、英语、西班牙语或日语。
+const DefaultLanguage = "zh"
 
 // NormalizeLanguage lower-cases and validates a language code, returning "" when
 // the code is empty or unsupported (so callers can fall through to the next source).
@@ -55,35 +52,29 @@ func NormalizeLanguage(code string) string {
 	return ""
 }
 
-// CurrentLanguage, when wired by the server, returns the active user-facing
-// output language picked at runtime (settings table) layered over the bootstrap
-// default. It is the single source backend display strings (enum labels, etc.)
-// read through ActiveLanguage. nil (unit tests / standalone) → ActiveLanguage
-// falls back to "ko", which keeps the Korean localization golden tests green.
+// CurrentLanguage 由服务端接线后返回运行期（设置表）选定的用户可见输出语言，并叠加启动默认值。
+// 后端展示字符串（枚举标签等）统一经由 ActiveLanguage 读取，它是唯一来源。
+// 未接线（单元测试/独立运行）时 ActiveLanguage 回落到 "zh"。
 var CurrentLanguage func() string
 
-// ActiveLanguage resolves the language for backend display strings. Precedence:
-// the runtime hook (settings table, via the server) over an unwired fallback of
-// "ko". Production always wires CurrentLanguage, so a fresh deploy resolves to the
-// configured default (DefaultLanguage = "en") through that hook; the "ko" fallback
-// only applies when the hook is absent (unit tests / standalone), so the Korean
-// localization golden tests hold without each having to pin the language.
+// ActiveLanguage 解析后端展示字符串所用语言。优先级：运行期钩子（服务端接线到设置表）
+// 高于未接线时的 "zh" 兜底。生产环境总会接线 CurrentLanguage，因此新部署经该钩子解析到
+// 配置默认值（DefaultLanguage = "zh"）；"zh" 兜底只在钩子缺席（单元测试/独立运行）时生效。
 func ActiveLanguage() string {
 	if CurrentLanguage != nil {
 		if v := NormalizeLanguage(CurrentLanguage()); v != "" {
 			return v
 		}
 	}
-	return "ko"
+	return "zh"
 }
 
-// Language resolves the default user-facing output language with precedence:
+// Language 解析默认用户可见输出语言，优先级：
 //
-//	env ARTEX_LANG  >  config file (language)  >  DefaultLanguage
+//	环境变量 ARTEX_LANG  >  配置文件（language）  >  DefaultLanguage
 //
-// This is the bootstrap default only. The runtime value a user picks in the UI is
-// stored in the settings table and takes precedence over this — the server layers
-// the two and wires the result into the agent and message catalogs.
+// 这里只是启动默认值。用户在界面里选定的运行期值保存在设置表中并优先生效——
+// 服务端把两者分层后接线给智能体与消息目录。
 func Language() string {
 	if v := NormalizeLanguage(os.Getenv("ARTEX_LANG")); v != "" {
 		return v
@@ -200,16 +191,16 @@ func SkillDir() string {
 // DSN came from (for startup logging).
 func PostgresDSN() (dsn, source string, err error) {
 	if v := strings.TrimSpace(os.Getenv("ARTEX_PG_DSN")); v != "" {
-		return v, trCfg("환경 변수 ARTEX_PG_DSN"), nil
+		return v, trCfg("环境变量 ARTEX_PG_DSN"), nil
 	}
 	db := Load().Database
 	if d := strings.TrimSpace(db.DSN); d != "" {
-		return d, fmt.Sprintf(trCfg("설정 파일 %s (database.dsn)"), Path()), nil
+		return d, fmt.Sprintf(trCfg("配置文件 %s (database.dsn)"), Path()), nil
 	}
 	if db.Host != "" || db.DBName != "" || db.User != "" {
-		return db.buildDSN(), fmt.Sprintf(trCfg("설정 파일 %s (database 필드)"), Path()), nil
+		return db.buildDSN(), fmt.Sprintf(trCfg("配置文件 %s (database 字段)"), Path()), nil
 	}
-	return "", "", fmt.Errorf(trCfg("데이터베이스 설정을 찾을 수 없습니다: 환경 변수 ARTEX_PG_DSN 이 설정되어 있지 않고, 설정 파일 %s 에도 database (dsn 또는 host/user/dbname) 설정이 없습니다. 설정 파일을 만들거나 환경 변수를 설정한 뒤 다시 시도하세요"), Path())
+	return "", "", fmt.Errorf(trCfg("找不到数据库配置：环境变量 ARTEX_PG_DSN 未设置，配置文件 %s 中也没有 database（dsn 或 host/user/dbname）配置。请创建配置文件或设置环境变量后重试"), Path())
 }
 
 func (d Database) buildDSN() string {

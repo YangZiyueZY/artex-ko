@@ -39,71 +39,71 @@ import (
 // Defaults to "dev" for local builds. Exposed to the frontend via GET /api/health.
 var BuildVersion = "dev"
 
-// 사용자에게 노출되는 writeErr 응답 문구(한국어). 에이전트에 전달되는 프롬프트·도구
-// 설명·payload·로그는 원문을 보존하고, HTTP 핸들러가 writeErr/fmt.Errorf 로 내보내는
-// 최종 사용자 응답만 한국어로 둔다. (F3b, 번역어는 완료 파일·web i18n 과 동일 표기)
+// 暴露给用户的 writeErr 响应文案。传给智能体的提示词·工具
+// 描述·payload·日志保持中文原样，只有 HTTP 处理器经 writeErr/fmt.Errorf 发出的
+// 最终用户响应使用简体中文。（F3b，译词与已完成文件·web i18n 写法一致）
 const (
-	// 의도 제어·재실행 (controlIntent / rerunIntent / rerunBlocked)
-	errTaskDeletingIntentControl = "작업을 삭제하는 중이라 의도를 제어할 수 없습니다"
-	errTaskDeletingIntentRerun   = "작업을 삭제하는 중이라 의도를 재실행할 수 없습니다"
-	errIntentNotRerunnable       = "재실행할 수 있는 상태가 아닙니다(blocked·exhausted·stopped 만 재실행할 수 있습니다)"
+	// 意图控制·重新执行（controlIntent / rerunIntent / rerunBlocked）
+	errTaskDeletingIntentControl = "任务正在删除中，无法控制意图"
+	errTaskDeletingIntentRerun   = "任务正在删除中，因此无法重新执行意图"
+	errIntentNotRerunnable       = "当前状态无法重新运行（只有 blocked、exhausted、stopped 可以重新运行）"
 
-	// 작업 생성 (createTask) — 소스 작업·기업·분류·작업 수준 가로채기 규칙 검증
-	errCreateTaskSourceLimit     = "소스 작업은 최대 %d개까지 연결할 수 있습니다"
-	errCreateTaskSourceInvalid   = "소스 작업 id가 올바르지 않거나 중복되었습니다"
-	errCreateTaskSourceNotFound  = "소스 작업 #%d를 찾을 수 없습니다"
-	errCreateTaskCompanyLimit    = "연결 기업이 올바르지 않습니다: 유효한 기업은 최대 %d개까지 선택할 수 있습니다"
-	errCreateTaskInterceptRules  = "작업 수준 가로채기 규칙이 올바르지 않습니다: "
-	errCreateTaskCategoryInvalid = "작업 분류를 찾을 수 없거나 올바르지 않습니다"
-	errCreateTaskCompanyInvalid  = "연결 기업을 찾을 수 없거나 올바르지 않습니다"
+	// 任务创建（createTask）—— 源任务·企业·分类·任务级拦截规则校验
+	errCreateTaskSourceLimit     = "最多可关联 %d 个源任务"
+	errCreateTaskSourceInvalid   = "源任务 id 不正确或重复"
+	errCreateTaskSourceNotFound  = "找不到源任务 #%d"
+	errCreateTaskCompanyLimit    = "关联企业无效：最多只能选择 %d 个有效企业"
+	errCreateTaskInterceptRules  = "任务级拦截规则不正确: "
+	errCreateTaskCategoryInvalid = "找不到任务分类或其无效"
+	errCreateTaskCompanyInvalid  = "找不到关联企业或其无效"
 
-	// LLM 설정 검증 (validateTaskProfileIDs → createTask/updateTaskLLMProfiles writeErr)
-	errLLMProfileInvalid  = "LLM 설정 id가 올바르지 않거나 중복되었습니다"
-	errLLMProfileNotFound = "LLM 설정 #%d를 찾을 수 없거나 API Key가 설정되어 있지 않습니다"
+	// LLM 配置校验（validateTaskProfileIDs → createTask/updateTaskLLMProfiles 的 writeErr）
+	errLLMProfileInvalid  = "LLM 配置 id 无效或重复"
+	errLLMProfileNotFound = "找不到 LLM 配置 #%d，或未设置其 API Key"
 
-	// 자산 저장소·커버리지 (taskCoverage / taskCoverageGraph / taskAssetRefs …)
-	errAssetStoreDisabled = "자산 저장소가 활성화되어 있지 않습니다"
-	errAssetIDRequired    = "asset_id가 필요합니다"
+	// 资产仓库·覆盖率（taskCoverage / taskCoverageGraph / taskAssetRefs …）
+	errAssetStoreDisabled = "资产存储库未启用"
+	errAssetIDRequired    = "需要 asset_id"
 
-	// 파이썬 인터프리터 탐지 (pgDetectPython)
-	errPythonNotDetected = "python을 찾을 수 없습니다(python3·python 모두 PATH에 없습니다)"
+	// Python 解释器探测（pgDetectPython）
+	errPythonNotDetected = "找不到 python（python3 和 python 均不在 PATH 中）"
 
-	// 알림 전역 설정 (링크 기준 주소·요약 주기 — web notify.global 라벨과 동일 표기)
-	errNotifyBaseURLScheme = "링크 기준 주소는 http:// 또는 https://로 시작해야 합니다"
-	errNotifyDigestRange   = "요약 주기는 1~1440분 사이여야 합니다"
+	// 通知全局设置（链接基准地址·汇总周期 —— 与 web notify.global 标签写法一致）
+	errNotifyBaseURLScheme = "链接基准地址必须以 http:// 或 https:// 开头"
+	errNotifyDigestRange   = "摘要周期必须介于 1~1440 分钟之间"
 
-	// 사용자 대면 출력 언어 설정 (putSettings)
-	errOutputLanguageInvalid = "지원하지 않는 언어입니다(en·ko·zh·es·ja 중 하나여야 합니다)"
+	// 用户可见输出语言设置（putSettings）
+	errOutputLanguageInvalid = "不支持的语言（必须为 en·ko·zh·es·ja 之一）"
 
-	// 메인 에이전트 대화·세션 (newMainSession / chat)
-	errTaskDeletingNewSession = "작업을 삭제하는 중이라 새 세션을 만들 수 없습니다"
-	errTaskDeletingNewMessage = "작업을 삭제하는 중이라 새 메시지를 보낼 수 없습니다"
-	errMainAgentBusy          = "메인 에이전트가 이전 메시지를 처리하는 중입니다. 잠시 후 다시 시도해 주세요"
+	// 主智能体对话·会话（newMainSession / chat）
+	errTaskDeletingNewSession = "任务正在删除，无法创建新会话"
+	errTaskDeletingNewMessage = "任务正在删除中，无法发送新消息"
+	errMainAgentBusy          = "主智能体正在处理上一条消息，请稍后重试"
 )
 
-// 사용자에게 노출되지만 writeErr 를 거치지 않는 응답 문구(한국어). writeJSON 의 error
-// 필드나 메서드 return 으로 화면에 그대로 뜨므로 위 블록과 성격은 같되 경로가 다르다.
-// nav 경로는 web i18n 라벨(nav.system="시스템", llmConfig="LLM 설정")과 동일 표기. (F34)
+// 暴露给用户、但不经过 writeErr 的响应文案。它会通过 writeJSON 的 error
+// 字段或方法返回原样显示到界面，因此性质与上一块相同、只是路径不同。
+// nav 路径与 web i18n 标签（nav.system="系统"、llmConfig="LLM 配置"）写法一致。（F34）
 const (
-	// 채팅 LLM 부재 사유 (chatUnavailableReason → writeErr 503 / 대화 종료 사유)
-	errChatNoLLMProfile       = "아직 LLM 설정이 없습니다: 시스템 → LLM 설정에서 설정을 하나 추가해 주세요"
-	errChatNoActiveLLMProfile = "활성화된 LLM 설정이 없습니다: 시스템 → LLM 설정에서 하나를 활성화하거나, 이 대화에서 사용할 설정을 지정해 주세요"
-	errChatLLMNotReady        = "LLM이 준비되지 않아 대화할 수 없습니다: 시스템 → LLM 설정에 사용할 수 있고 활성화된 설정이 있는지 확인해 주세요"
+	// 聊天 LLM 缺失原因（chatUnavailableReason → writeErr 503 / 对话终止原因）
+	errChatNoLLMProfile       = "尚无 LLM 配置：请在 系统 → LLM 设置 中添加一个配置"
+	errChatNoActiveLLMProfile = "没有已启用的 LLM 配置：请在 系统 → LLM 设置 中启用一个，或指定本次对话要使用的配置"
+	errChatLLMNotReady        = "LLM 未就绪，无法对话：请在 系统 → LLM 设置 中确认是否存在可用且已启用的配置"
 
-	// LLM 연결 테스트·웹 검색 프로브 (writeJSON {ok:false, error:…}, 설정 화면 점검 결과)
-	errLLMTestNoAPIKey         = "API Key가 제공되지 않았습니다"
-	errWebSearchProbeNoResults = "검색 결과가 0건입니다(요청이 제한되었거나 프록시가 연결되지 않았을 수 있습니다)"
+	// LLM 连接测试·网络搜索探测（writeJSON {ok:false, error:…}，设置页检查结果）
+	errLLMTestNoAPIKey         = "未提供 API Key"
+	errWebSearchProbeNoResults = "搜索结果为 0 条（请求可能被限制，或代理未连接）"
 )
 
-// 규칙 모드 채팅(LLM 미설정 시 사람이 직접 조종하는 fallbackChat) 사용자 응답(한국어).
-// reply 는 writeJSON 과 대화 로그 양쪽으로 사용자에게 그대로 노출된다. 입력 트리거 키워드는
-// 기존 영어 별칭(intent/hint)과 같은 방식으로 한국어 별칭(의도/힌트)을 추가로 받는다 —
-// 순수 입력 파싱이고 와이어 포맷이 아니므로 중국어·영어 트리거를 유지한 채 더하기만 한다.
-// 용어는 web i18n·GLOSSARY 와 정합: intent→의도, hint→힌트, finding→취약점, planner→플래너. (F34 d)
+// 规则模式聊天（LLM 未配置时由人直接操控的 fallbackChat）的用户响应。
+// reply 会同时经 writeJSON 和对话日志原样暴露给用户。输入触发关键词接受
+// 中文（意图/提示）与英文（intent/hint）前缀 —— 这是纯输入解析、
+// 不是 wire 格式，因此新增别名只需追加、不影响既有触发词。
+// 用词与 web i18n·GLOSSARY 对齐：intent→意图、hint→提示、finding→漏洞、planner→Planner。（F34 d）
 const (
-	fallbackIntentInjected = "우선순위 높은 의도를 하나 주입했습니다: "
-	fallbackHintRecorded   = "힌트를 기록했습니다. 플래너가 다음에 읽습니다: "
-	fallbackChatStatus     = "(규칙 모드, LLM 미설정) 현재 현황: 자산 %d개, 대기 의도 %d개, 확인된 취약점 %d개.\n사용 가능한 명령: \"의도 ...\"로 의도를 주입하고, \"힌트 ...\"로 플래너에게 힌트를 전달합니다."
+	fallbackIntentInjected = "已注入一个高优先级意图："
+	fallbackHintRecorded   = "已记录提示。planner 下次会读取: "
+	fallbackChatStatus     = "（规则模式，未配置 LLM）当前状态：资产 %d 个、待处理意图 %d 个、已确认漏洞 %d 个。\n可用命令：使用 \"意图 ...\" 注入意图，使用 \"提示 ...\" 向 planner 传递提示。"
 )
 
 // Server exposes the ARTEX backend over a JSON HTTP API for the shadcn/ui
@@ -318,7 +318,7 @@ func New(ctx context.Context, m *Manager, skillDir string, dataDir string, keyDi
 		resolveLang := s.outputLanguage
 		agent.OutputLanguage = resolveLang
 		config.CurrentLanguage = resolveLang
-		notify.Lang = resolveLang                       // 푸시·이메일의 심각도·상태 라벨도 같은 언어를 따른다
+		notify.Lang = resolveLang                       // 推送·邮件里的严重程度·状态标签也遵循同一语言
 		wireAgentAugment(m.pg, s.skillDir, s.hostTools) // 可见 skills/MCP + 流量/编排 host 工具装配进 agent 工具集
 		domainReg := buildDomainReg(m.Assets())
 		wireTools(m.pg, domainReg) // 内置工具表：按 agent 过滤 + 覆盖描述/schema + 注入默认值
@@ -332,14 +332,14 @@ func New(ctx context.Context, m *Manager, skillDir string, dataDir string, keyDi
 		go newScheduler(s).Run(s.ctx) // P3 触发器调度(定时/finding/目标事件),仅自定义 agent
 		// 漏洞 IM 推送投递引擎。与 Scheduler 并列但独立：推送的实时性要求(3s)
 		// 与触发器的业务节奏不同，且两者失败互不牵连——推送卡住不该影响 agent 触发。
-		// 통합 테스트는 stepRealtime·stepDigest 를 직접 호출해 분배를 결정론적으로
-		// 검증하므로, 이 환경 변수로 백그라운드 루프만 끌 수 있다(미설정이 기본).
+		// 集成测试直接调用 stepRealtime·stepDigest 来确定性地
+		// 验证分发结果，因此这个环境变量只用于关掉后台循环（默认不设置）。
 		if os.Getenv(notifyBackgroundDisabledEnv) == "" {
 			go newNotifier(s).Run(s.ctx)
 		} else {
-			// 핵심 기능(취약점 IM 알림 전송)을 끄는 분기라 시작 로그를 남긴다. 이 변수는
-			// 통합 테스트 전용이므로, 운영에서 켜져 있으면 실수나 환경 상속을 의심할 단서가 된다.
-			log.Printf(logT("[notify] 백그라운드 알림 전송 루프가 %s 로 꺼졌습니다(테스트 전용) — 취약점 IM 알림이 전송되지 않습니다"), notifyBackgroundDisabledEnv)
+			// 这是关闭核心功能（漏洞 IM 通知发送）的分支，因此记录启动日志。该变量
+			// 只用于集成测试，所以在生产环境中若被打开，就意味着配置失误或环境继承。
+			log.Printf(logT("[notify] 后台通知发送循环已通过 %s 关闭（仅测试）— 不会发送漏洞 IM 通知"), notifyBackgroundDisabledEnv)
 		}
 		// Fill the tool cache for any enabled MCP that has none yet (notably the
 		// seeded browser MCP on first run). Async so it never blocks startup.
@@ -1040,7 +1040,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("PUT /api/intercept/tool-config", s.interceptSetToolConfig)
 	mux.HandleFunc("GET /api/intercept/judge", s.interceptGetJudgeConfig)
 	mux.HandleFunc("PUT /api/intercept/judge", s.interceptSetJudgeConfig)
-	mux.HandleFunc("GET /api/intercept/judge/usage", s.interceptJudgeUsage) // 모델 판정(대체 승인) 누적 token 사용량
+	mux.HandleFunc("GET /api/intercept/judge/usage", s.interceptJudgeUsage) // 模型判定（替代审批）累计 token 用量
 
 	// /api/* goes through CORS + JWT; everything else is served by the embedded
 	// frontend (public — auth is enforced client-side and on the API). With the
@@ -3399,10 +3399,10 @@ func (s *Server) settingsPayload() map[string]any {
 	if concLimit == 0 {
 		concLimit = defaultConcurrencyLimit // 关闭时也回显一个合理默认值给 UI
 	}
-	// 사용자 대면 출력 언어: 런타임 설정값 > config.Language() 기본값(ARTEX_LANG·설정 파일·한국어).
+	// 用户可见输出语言：运行时设置值 > config.Language() 默认值（ARTEX_LANG·配置文件·中文）。
 	outputLang := s.outputLanguage()
 	return map[string]any{
-		"output_language":          outputLang, // 사용자 대면 출력 언어(en/ko/zh/es/ja)
+		"output_language":          outputLang, // 用户可见输出语言（en/ko/zh/es/ja）
 		"traffic_capture":          s.m.TrafficEnabled(),
 		"agent_traffic_binding":    s.m.pg.GetBool(settingAgentTrafficBinding, false),
 		"llm_record":               s.m.LLMRecordEnabled(),
@@ -3503,8 +3503,8 @@ func (s *Server) putSettings(w http.ResponseWriter, r *http.Request) {
 		NotifyEnabled    *bool   `json:"notify_enabled"`
 		NotifyBaseURL    *string `json:"notify_public_base_url"`
 		NotifyDigestMins *int    `json:"notify_digest_interval_min"`
-		// 사용자 대면 출력 언어(en/ko/zh/es/ja). 에이전트 훅이 매 턴 읽으므로 즉시 적용되고
-		// 에이전트를 다시 생성할 필요가 없다. null=변경 안 함.
+		// 用户可见输出语言（en/ko/zh/es/ja）。智能体钩子每轮都会读取，因此立即生效，
+		// 无需重新创建智能体。null=不修改。
 		OutputLanguage *string `json:"output_language"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -3531,8 +3531,8 @@ func (s *Server) putSettings(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if req.OutputLanguage != nil {
-		// 지원 언어("en"/"ko"/"zh"/"es")만 받는다. 에이전트 훅이 매 턴 읽으므로 즉시
-		// 적용되고 에이전트를 다시 생성할 필요가 없다.
+		// 只接受受支持的语言（"en"/"ko"/"zh"/"es"）。智能体钩子每轮都会读取，因此立即
+		// 生效，无需重新创建智能体。
 		lang := config.NormalizeLanguage(*req.OutputLanguage)
 		if lang == "" {
 			writeErr(w, 400, errOutputLanguageInvalid)
@@ -3882,7 +3882,7 @@ func (s *Server) chat(w http.ResponseWriter, r *http.Request) {
 			_, err := ma.Chat(ctx, maTaskID, mainSeg, s.m.Assets(), t.Store, t.Goal, agentMsg, emit, t.Notify, resume, t.NotifyGoal, t.NotifyHint)
 			s.engine.EndLLMCall(t.ID)
 			if err != nil && ctx.Err() == nil {
-				s.engine.emitActivity(t, db.Activity{Worker: "mainagent", Kind: "text", IsError: true, Summary: transcriptErrorSummary("메인 에이전트", err.Error()), MainSeg: segPtr})
+				s.engine.emitActivity(t, db.Activity{Worker: "mainagent", Kind: "text", IsError: true, Summary: transcriptErrorSummary("主智能体", err.Error()), MainSeg: segPtr})
 			}
 		}()
 		writeJSON(w, 202, map[string]any{"status": "accepted", "mode": "llm"})
@@ -3943,19 +3943,19 @@ func (s *Server) stopChat(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{"status": "stopping"})
 }
 
-// fallbackCommand classifies a rule-mode chat message into an intent/hint command
-// plus the trimmed argument. The trigger keywords accept Chinese (意图/提示), English
-// (intent/hint) and Korean (의도/힌트) prefixes — pure input parsing, not a wire
-// format, so the Korean aliases are additive and backward compatible. cmd is
-// "intent", "hint" or "" (status summary). (F34 d)
+// fallbackCommand 把规则模式的聊天消息归类为 intent/hint 命令，
+// 并给出去除触发词后的参数。触发关键词接受中文（意图/提示）与英文
+// （intent/hint）前缀 —— 这是纯输入解析，不是 wire
+// 格式，因此新增别名只需追加、向后兼容。cmd 为
+// "intent"、"hint" 或 ""（状态摘要）。（F34 d）
 func fallbackCommand(msg string) (cmd, text string) {
 	m := strings.TrimSpace(msg)
 	lower := strings.ToLower(m)
 	switch {
-	case strings.HasPrefix(m, "意图") || strings.HasPrefix(m, "의도") || strings.HasPrefix(lower, "intent"):
-		return "intent", strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(m, "意图"), "의도"), "intent"))
-	case strings.HasPrefix(m, "提示") || strings.HasPrefix(m, "힌트") || strings.HasPrefix(lower, "hint"):
-		return "hint", strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(m, "提示"), "힌트"), "hint"))
+	case strings.HasPrefix(m, "意图") || strings.HasPrefix(m, "意图") || strings.HasPrefix(lower, "intent"):
+		return "intent", strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(m, "意图"), "意图"), "intent"))
+	case strings.HasPrefix(m, "提示") || strings.HasPrefix(m, "提示") || strings.HasPrefix(lower, "hint"):
+		return "hint", strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(m, "提示"), "提示"), "hint"))
 	default:
 		return "", m
 	}
@@ -4077,9 +4077,9 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 }
 
 func writeErr(w http.ResponseWriter, code int, msg string) {
-	// 한국어 원문 응답 문구를 활성 출력 언어로 치환한다(en/zh/es/ja). 카탈로그에 없거나
-	// 한국어이면 원문 그대로 나간다. 하위 계층에서 전파된 임의 err.Error() 는 보통 키에
-	// 없어 그대로 통과한다.
+	// 把中文源响应文案替换为当前激活的输出语言（en/ko/es/ja）。目录里没有该键，
+	// 或当前语言是中文时原样输出。由下层传播上来的任意 err.Error() 通常
+	// 不在键集合里，因此直接透传。
 	writeJSON(w, code, map[string]any{"error": trMsg(msg)})
 }
 

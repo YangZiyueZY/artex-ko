@@ -14,11 +14,10 @@ import (
 	"github.com/Autumn-27/artex/config"
 )
 
-// TestLogTTemplatesHaveTranslations pins that every logT("…") template in this
-// package has an en/zh/es entry in config's log catalog. config.T falls back to
-// the Korean source on a miss, so a key that drifts by one character (spacing,
-// an escaped quote) would otherwise ship Korean console logs to non-Korean
-// operators without any test noticing.
+// TestLogTTemplatesHaveTranslations 固定本包每个 logT("…") 模板在 config 的日志目录里
+// 都有 en/es/ja/ko 译文。目录以中文源模板为键，config.T 在查不到时回落为键本身（中文），
+// 因此只要键因为一个字符（空格、转义引号）漂移，其他语言的运营者就会看到中文控制台日志，
+// 而没有任何测试发现。同时校验源模板本身是中文（含汉字、不含韩文）。
 func TestLogTTemplatesHaveTranslations(t *testing.T) {
 	files, err := filepath.Glob("*.go")
 	if err != nil {
@@ -42,8 +41,8 @@ func TestLogTTemplatesHaveTranslations(t *testing.T) {
 			if id, ok := call.Fun.(*ast.Ident); !ok || id.Name != "logT" {
 				return true
 			}
-			// A plain literal is the template itself. A computed argument (e.g. a
-			// map lookup) is checked through every Hangul literal it contains.
+			// 直接写字面量时它就是模板本身；参数是计算表达式（如 map 查询）时，
+			// 逐个检查它包含的每个字符串字面量。
 			found := 0
 			ast.Inspect(call.Args[0], func(n ast.Node) bool {
 				lit, ok := n.(*ast.BasicLit)
@@ -55,48 +54,51 @@ func TestLogTTemplatesHaveTranslations(t *testing.T) {
 					t.Fatalf("%s: %v", fset.Position(lit.Pos()), err)
 				}
 				if strings.IndexFunc(s, func(r rune) bool { return unicode.Is(unicode.Hangul, r) }) >= 0 {
+					t.Errorf("%s: logT 模板仍含韩文，未汉化：%q", fset.Position(lit.Pos()), s)
+					return true
+				}
+				if strings.IndexFunc(s, func(r rune) bool { return unicode.Is(unicode.Han, r) }) >= 0 {
 					keys = append(keys, s)
 					found++
 				}
 				return true
 			})
 			if found == 0 {
-				t.Errorf("%s: no Korean template literal found in logT argument", fset.Position(call.Pos()))
+				t.Errorf("%s: logT 参数里没有中文模板字面量", fset.Position(call.Pos()))
 			}
 			return true
 		})
 	}
 	if len(keys) == 0 {
-		t.Fatal("found no logT call sites; the scan is broken")
+		t.Fatal("没有扫描到任何 logT 调用点；扫描逻辑已失效")
 	}
-	for _, lang := range []string{"en", "zh", "es"} {
+	for _, lang := range []string{"en", "es", "ja", "ko"} {
 		t.Setenv("ARTEX_LANG", lang)
 		for _, k := range keys {
 			if config.T(k) == k {
-				t.Errorf("logT template has no %s translation: %q", lang, k)
+				t.Errorf("logT 模板缺少 %s 译文：%q", lang, k)
 			}
 		}
 	}
 }
 
-// TestErrCatalogFormatVerbsMatch pins that translated API error templates keep the
-// Korean template's format verbs in order; trMsg wraps the template before
-// fmt.Sprintf/Errorf fill it, so a mismatch would garble the response.
+// TestErrCatalogFormatVerbsMatch 固定翻译后的 API 错误模板保持中文模板的格式动词顺序；
+// trMsg 在 fmt.Sprintf/Errorf 之前替换模板，动词错位会把响应拼坏。
 func TestErrCatalogFormatVerbsMatch(t *testing.T) {
 	verbs := regexp.MustCompile(`%[-+# 0-9.]*[a-zA-Z%]`)
-	for ko, tr := range errCatalog {
-		want := strings.Join(verbs.FindAllString(ko, -1), " ")
+	for zh, tr := range errCatalog {
+		want := strings.Join(verbs.FindAllString(zh, -1), " ")
 		for lang, v := range tr {
 			if got := strings.Join(verbs.FindAllString(v, -1), " "); got != want {
-				t.Errorf("errCatalog[%q][%s] verbs = %q, want %q", ko, lang, got, want)
+				t.Errorf("errCatalog[%q][%s] verbs = %q, want %q", zh, lang, got, want)
 			}
 		}
 	}
 }
 
-// TestAuthErrorsTranslated pins that every authErr* message the auth endpoints
-// return has an en/zh/es translation, so a non-Korean user who fails a login or
-// the first-run setup sees the error in the chosen language.
+// TestAuthErrorsTranslated 固定 auth 端点返回的每个 authErr* 消息都有 en/es/ja/ko 译文，
+// 这样非中文用户登录失败或首次初始化失败时，能看到所选语言的错误。同时校验源消息本身
+// 已是简体中文（含汉字、不含韩文），防止回退。
 func TestAuthErrorsTranslated(t *testing.T) {
 	t.Cleanup(func() { config.CurrentLanguage = nil })
 	fset := token.NewFileSet()
@@ -124,13 +126,21 @@ func TestAuthErrorsTranslated(t *testing.T) {
 		}
 	}
 	if len(msgs) == 0 {
-		t.Fatal("found no authErr constants; the scan is broken")
+		t.Fatal("没有扫描到任何 authErr 常量；扫描逻辑已失效")
 	}
-	for _, lang := range []string{"en", "zh", "es"} {
+	for _, m := range msgs {
+		if strings.IndexFunc(m, func(r rune) bool { return unicode.Is(unicode.Hangul, r) }) >= 0 {
+			t.Errorf("auth 错误源消息仍含韩文，未汉化：%q", m)
+		}
+		if strings.IndexFunc(m, func(r rune) bool { return unicode.Is(unicode.Han, r) }) < 0 {
+			t.Errorf("auth 错误源消息不是中文：%q", m)
+		}
+	}
+	for _, lang := range []string{"en", "es", "ja", "ko"} {
 		config.CurrentLanguage = func() string { return lang }
 		for _, m := range msgs {
 			if trMsg(m) == m {
-				t.Errorf("auth error has no %s translation: %q", lang, m)
+				t.Errorf("auth 错误缺少 %s 译文：%q", lang, m)
 			}
 		}
 	}

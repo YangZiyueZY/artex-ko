@@ -10,14 +10,12 @@ import (
 	"github.com/Autumn-27/artex/db"
 )
 
-// TestNotifierDeliveryReasonsLocalized guards F17: every delivery failure/defer
-// reason that notifier.go writes into notification_deliveries.last_error — which
-// notify_api.go echoes back to the "전달 기록" table in delivery-list.tsx — must be
-// Korean (Hangul present, no Chinese Han). Diagnostic log.Printf lines stay in the
-// original language (Z2) and are intentionally not covered here.
+// TestNotifierDeliveryReasonsLocalized 守护 F17 汉化：notifier.go 写入
+// notification_deliveries.last_error 的每条投递失败/延后原因——notify_api.go 会把它
+// 回显到 delivery-list.tsx 的「投递记录」表格——都必须是简体中文（含汉字、不含韩文）。
+// 诊断用 log.Printf 保持原文语言（Z2），此处刻意不覆盖。
 func TestNotifierDeliveryReasonsLocalized(t *testing.T) {
-	// Format every constant with ASCII arguments so any leftover Han ideograph is
-	// the constant's own, not injected by the test data.
+	// 用 ASCII 参数格式化每个常量，使判定结果只反映常量本身，而不是测试数据注入的内容。
 	cases := []struct {
 		label string
 		msg   string
@@ -32,7 +30,7 @@ func TestNotifierDeliveryReasonsLocalized(t *testing.T) {
 		{"batchAllUnparseable", fmt.Sprintf(errDeliveryBatchAllUnparseable, 2)},
 	}
 	for _, c := range cases {
-		assertKoreanError(t, c.label, c.msg)
+		assertChineseError(t, c.label, c.msg)
 	}
 }
 
@@ -42,18 +40,18 @@ func TestNotifierDeliveryReasonsLocalized(t *testing.T) {
 func TestNotifierParseSnapshotErrorsLocalized(t *testing.T) {
 	// Empty snapshot.
 	if _, err := parseSnapshot(&db.NotificationDelivery{ID: 7}); err == nil {
-		t.Fatal("빈 스냅샷이 오류 없이 통과해서는 안 됩니다")
+		t.Fatal("空快照不应在没有错误的情况下通过")
 	} else {
-		assertKoreanError(t, "parseSnapshot.empty", err.Error())
+		assertChineseError(t, "parseSnapshot.empty", err.Error())
 		if !strings.Contains(err.Error(), "7") {
-			t.Fatalf("parseSnapshot.empty: 전달 항목 ID 7 이 메시지에 없습니다: %q", err.Error())
+			t.Fatalf("parseSnapshot.empty: 消息中没有投递项 ID 7：%q", err.Error())
 		}
 	}
 	// Malformed JSON snapshot.
 	if _, err := parseSnapshot(&db.NotificationDelivery{ID: 9, Snapshot: []byte("{bad")}); err == nil {
-		t.Fatal("깨진 JSON 스냅샷이 오류 없이 통과해서는 안 됩니다")
+		t.Fatal("损坏的 JSON 快照不应在没有错误的情况下通过")
 	} else {
-		assertKoreanError(t, "parseSnapshot.malformed", err.Error())
+		assertChineseError(t, "parseSnapshot.malformed", err.Error())
 	}
 }
 
@@ -65,8 +63,8 @@ func TestNotifierRenderBatchAllUnparseableLocalized(t *testing.T) {
 	n := &Notifier{}
 	deliveries := []*db.NotificationDelivery{{ID: 1}, {ID: 2}}
 	if _, _, err := n.renderBatch(context.Background(), deliveries, "", 30); err == nil {
-		t.Fatal("모든 스냅샷이 해석 불가일 때 오류가 나와야 합니다")
+		t.Fatal("所有快照都无法解析时必须报错")
 	} else {
-		assertKoreanError(t, "renderBatch.allUnparseable", err.Error())
+		assertChineseError(t, "renderBatch.allUnparseable", err.Error())
 	}
 }

@@ -499,7 +499,7 @@ func (s *Server) seedOrchestrationTools() {
 	s.reseedMainAgentPrompt()         // mainagent 提示词加入「目标达成后 add_intent 反问是否建目标」(一次性)
 	s.reseedPlannerPrompt()           // planner 提示词:重写「0 意图」正当理由 + 加量化验收核对(一次性)
 	s.reseedWorkerPrompt()            // worker 提示词:加否定结论证据门槛(一次性)
-	s.seedReporterAgent()             // 预置「보고서 작성」agent + 工具绑定 + finding 触发器(一次性)
+	s.seedReporterAgent()             // 预置「报告撰写」agent + 工具绑定 + finding 触发器(一次性)
 	s.upgradeReporterTriggerMessage() // 老库补迁移:让 reporter 回传 evidence_version(一次性)
 	s.seedFindingTrafficTools()       // 增加可选证据参数及只读证据工具，保留用户配置
 	s.seedFindingWorkflowTools()
@@ -543,7 +543,7 @@ func (s *Server) refreshBuiltinToolSchemas() {
 		}
 	}
 	_ = s.m.pg.SetSetting(flag, "true")
-	log.Print(logT("[tools] orchestration/platform 도구 스키마를 코드 기본값으로 새로고침(1회성)"))
+	log.Print(logT("[tools] 已将 orchestration/platform 工具 schema 刷新为代码默认值（一次性）"))
 }
 
 // unbindGoalMetDefault removes goal_met's default "planner" binding ONCE (guarded by
@@ -727,18 +727,15 @@ func (s *Server) upgradeReporterTriggerMessage() {
 		log.Printf("[reporter] 触发消息已升级为读取并回传 evidence_version")
 	}
 }
+// reporterAgentName·reporterAgentDescription 是内置 reporter 智能体的**显示名与描述**。
+// 触发消息（reporterToolCallMessage）属于模型输入，保留中文原文；而这里的名称·描述只经
+// `agentDTO` 渲染到 系统/智能体 界面（server_mgmt.go），不进入任何提示词或智能体选择，
+// 属于纯 UI 标签，因此随界面语言中文化。触发器基于 report_finding 工具调用（OnToolCall·确定性），
+// reporter 只用 key "reporter" 引用，不会被显示名选中。回归防护：reporter_seed_localized_test.go。[[F35]]
+const reporterAgentName = "报告撰写"
+const reporterAgentDescription = "漏洞详细报告撰写：发现漏洞后自动触发，查询证据与执行过程后撰写 Markdown 报告并记录到该漏洞上。"
 
-// reporterAgentName·reporterAgentDescription 은 시드되는 reporter 에이전트의 표시 전용
-// 라벨이다(한국어화). 에이전트의 두뇌(段[A] agent.ReporterDefaultPrompt)와 트리거 주입
-// 메시지(reporterToolCallMessage)는 모델 입력이라 중국어 원문을 보존하지만, 이 이름·설명은
-// `agentDTO` 로 system/agents UI 에만 렌더되고(server_mgmt.go) 어떤 프롬프트·에이전트 선택에도
-// 들어가지 않는 순수 UI 라벨이라 한국어화한다(BRIEF 사용자 노출 산출물 한국어화 범위). 트리거는
-// report_finding 도구 호출 기반(OnToolCall·결정적)이라 reporter 는 key "reporter" 로 참조될 뿐
-// 표시 이름으로 선택되지 않는다. 회귀 방어: reporter_seed_localized_test.go. [[F35]]
-const reporterAgentName = "보고서 작성"
-const reporterAgentDescription = "취약점 상세 보고서 작성: 취약점을 발견하면 자동으로 트리거되어, 증거와 실행 과정을 조회한 뒤 Markdown 보고서를 작성해 해당 취약점에 기록합니다."
-
-// seedReporterAgent 预置一个「보고서 작성」自定义 agent(builtin=false，可在 UI 编辑/删除)：
+// seedReporterAgent 预置一个「报告撰写」自定义 agent(builtin=false，可在 UI 编辑/删除)：
 // 绑定 update_finding_report + 任务查询工具，并挂一个「report_finding 被调用即触发」的
 // 触发器 —— 每登记一个漏洞就唤起它写详细报告。一次性(settings flag 守卫)：用户删掉后不再重建。
 // 依赖：orchestration 工具已在本函数上方 SeedTool 入库，故绑定得上。
@@ -785,7 +782,7 @@ func (s *Server) seedReporterAgent() {
 	}); err != nil {
 		log.Printf("[reporter] 创建触发器失败: %v", err)
 	}
-	log.Printf(logT("[reporter] 「%s」 agent + finding 트리거 사전 구성"), reporterAgentName)
+	log.Printf(logT("[reporter] 已预配置「%s」agent + finding 触发器"), reporterAgentName)
 }
 
 // seedAutoReportFindingBinding adds "auto" to report_finding's binding ONCE so

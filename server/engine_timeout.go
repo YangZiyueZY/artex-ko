@@ -226,12 +226,12 @@ func (e *Engine) settleTask(ctx context.Context, t *Task) {
 	}
 }
 
-// runFinalPlannerRound drives exactly ONE terminal planner round with the
-// task-timeout planner words (final goal judgment; no new intents). Waits for the
-// LLM to be ready (bounded by ctx) so a completable task isn't mis-judged timeout.
-// timeoutFinalRoundSummaryFmt 는 작업 시간 초과 시 마지막 계획 라운드의 표시 전용
-// 활동 요약이다(node_id 없음·전사에만 노출·되먹임 경로 미접촉). [[G132]]
-const timeoutFinalRoundSummaryFmt = "작업 시간 초과 마무리·최종 판정(%d차)"
+// runFinalPlannerRound 用任务超时专用的 planner 话术只驱动一次
+// 终结性规划轮（做最终目标判定，不产生新意图）。它会等待 LLM 就绪
+// （受 ctx 限制），以免本可完成的任务被误判为超时。
+// timeoutFinalRoundSummaryFmt 是任务超时时最后一轮规划的显示专用
+// 活动摘要（无 node_id·只暴露在转写·不触及反馈路径）。[[G132]]
+const timeoutFinalRoundSummaryFmt = "任务超时收尾·最终判定（第 %d 次）"
 
 func (e *Engine) runFinalPlannerRound(ctx context.Context, t *Task) (met bool) {
 	if e.IsDeleting(t.ID) {

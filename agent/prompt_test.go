@@ -86,7 +86,7 @@ func TestRenderSystemOverrideAndFallback(t *testing.T) {
 // (Chinese) directive, so finding one means the output-language mandate names that
 // language. Used by the directive and role-append tests below.
 var langMarker = map[string]string{
-	"ko": "한국어",
+	"ko": "韩语",
 	"en": "English",
 	"zh": "简体中文",
 	"es": "Español",

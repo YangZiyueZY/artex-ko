@@ -18,18 +18,18 @@ import (
 	actool "github.com/Autumn-27/norma/tool"
 )
 
-// 사용자 노출 HTTP 에러 응답 문구. 아래 네 문구는 startFindingRetest HTTP 핸들러에서만
-// 반환되고 에이전트 도구 경로(findingRetestTools 의 roTool/wrTool 설명·파라미터 설명·
-// actool.Errorf)에는 닿지 않으므로 한국어로 번역한다. 반대로 도구 설명
-// (get_finding_retest_context·record_finding_retest_result)·파라미터 설명·
-// actool.Errorf(153행 회차 미연결 안내)와 seedFindingRetester 의 DB 시드 에이전트
-// 이름(漏洞复测)·프로필·note(内置默认)는 에이전트가 읽는 두뇌 입력이거나 시드라
-// 원문을 보존한다(각 지점 주석 참조, F16 두뇌 경계 계열).
+// 用户可见的 HTTP 错误响应文案。下面四条只在 startFindingRetest HTTP 处理器中
+// 返回，不会触及智能体工具路径（findingRetestTools 的 roTool/wrTool 描述·参数描述·
+// actool.Errorf），因此使用简体中文。相反，工具描述
+// （get_finding_retest_context、record_finding_retest_result）·参数描述·
+// actool.Errorf（153 行“轮次未关联”提示）以及 seedFindingRetester 的 DB 种子智能体
+// 名称（漏洞复测）·profile·note（内置默认）属于智能体读取的大脑输入或种子数据，
+// 保持中文原样（参见各点注释，F16 大脑边界系列）。
 const (
-	errFindingRetestNotesTooLong    = "재검증 보충 설명은 최대 4000자까지 입력할 수 있습니다"
-	errFindingRetestAgentMissing    = "취약점 재검증 에이전트가 없거나 비활성화되어 있습니다. 에이전트 관리에서 retester 를 설정하세요"
-	errFindingRetestToolRequired    = "재검증 에이전트에 도구를 활성화하고 연결하세요: "
-	errFindingRetestServiceStopping = "서비스가 종료 중입니다"
+	errFindingRetestNotesTooLong    = "重新验证的补充说明最多可输入 4000 个字符"
+	errFindingRetestAgentMissing    = "漏洞复验智能体不存在或已禁用。请在智能体管理中配置 retester"
+	errFindingRetestToolRequired    = "请为复验智能体启用并连接工具: "
+	errFindingRetestServiceStopping = "服务正在关闭"
 )
 
 func (s *Server) listActiveFindingRetests(w http.ResponseWriter, r *http.Request) {

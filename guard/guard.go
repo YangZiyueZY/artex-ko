@@ -108,14 +108,15 @@ func (g *Guard) applyIntercept(ctx context.Context, ev hook.Event) hook.Result {
 		g.interceptor.Log(ctx, intercept.ConvIDFromContext(ctx), dec, ev.ToolName, ev.Input, "allowed")
 		return hook.Result{}
 	case "ask":
-		// F14 두뇌 보존 판단: 아래 두 차단 사유와 systemBlockMessage 프레이밍은 번역하지
-		// 않고 중국어 원문을 유지한다. 이 문자열은 g.block → hook.Result.Message 로 에이전트
-		// 에게 돌아가는 tool_result(펜테스트 에이전트가 차단을 표적 방어로 오인해 우회를
-		// 시도하지 않도록 유도하는 의도적 조종 문구, BRIEF 段[A] 성능 보존 대상)이다. 더구나
-		// ask 차단 경로는 deny 경로와 달리 Interceptor.Log 를 타지 않아, g.block → g.record 가
-		// 같은 프레이밍 전문을 감사 로그(GET /api/audit → entries[].reason)에도 그대로 싣는다.
-		// 즉 하나의 문자열이 에이전트 입력과 표시를 겸한다(F16 동형). 표시만 한국어로 떼어내려면
-		// g.block 이 두 문자열을 나르도록 구조를 바꿔야 하는데 고위험·저가치라 보류한다.
+		// F14 大脑保留判断：下面两条拦截原因与 systemBlockMessage 的表述框架不翻译，
+		// 保留中文原文。该字符串会经 g.block → hook.Result.Message 作为 tool_result
+		// 回到智能体（这是刻意引导的措辞：让渗透测试智能体把拦截理解为针对性的防御，
+		// 而不是尝试绕过；属于 BRIEF 段[A] 的性能保留对象）。此外，ask 拦截路径与 deny
+		// 路径不同，不经过 Interceptor.Log，因此 g.block → g.record 会把同一段框架全文
+		// 原样写入审计日志（GET /api/audit → entries[].reason）。
+		// 也就是说，同一个字符串同时充当智能体输入与展示文案（与 F16 同型）。若只想把
+		// 展示部分单独本地化，就需要改造 g.block 让它携带两个字符串；风险高、收益低，
+		// 因此暂缓。
 		//
 		// If the worker context is already cancelled (task stopped / killed), block
 		// immediately without creating a pending record — avoids orphaned DB entries

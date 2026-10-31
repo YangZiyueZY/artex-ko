@@ -25,20 +25,20 @@ import (
 	"github.com/Autumn-27/artex/db"
 )
 
-// 사용자에게 노출되는 가로채기 판정·승인 메시지(한국어). judge 판정 결과·규칙 메시지는
-// 승인 기록(reason)·활동 스트림·409 응답으로 표시된다. 성능에 영향을 주는 에이전트 두뇌
-// (판정 프롬프트 본문)는 번역하지 않으며, [模型] 센티넬(decision_source 분류용 · UI 에서
-// 표시 전 제거 · db SQL LIKE·HasPrefix 소비처와 결합)도 원문 그대로 둔다.
+// 面向用户展示的拦截判定·审批提示（简体中文）。judge 的判定结果与规则提示会出现在
+// 审批记录（reason）、活动流与 409 响应中。影响性能的智能体「大脑」（判定提示词正文）
+// 不做翻译；[模型] 哨兵（用于 decision_source 分类 · UI 展示前移除 · 与 db 侧 SQL LIKE、
+// HasPrefix 的消费点耦合）也保持原样。
 const (
-	msgReviewContextIncomplete = "검토 맥락이 완전하지 않아 사람의 확인이 필요합니다: "
-	msgModelApprovalFailed     = "모델 승인에 실패하여 실패 정책에 따라 처리합니다: "
-	msgModelOutputUnparsable   = "모델 출력을 해석할 수 없어 실패 정책에 따라 처리합니다"
-	msgToolApprovalRequestFmt  = "도구 %s 승인 요청 (#%d)"
-	reasonWorkCanceled         = "작업이 취소되었습니다"
-	reasonWorkCanceledPreExec  = "실행 전에 작업이 취소되었습니다"
-	reasonApprovalTimeout      = "승인 시간이 초과되어 시간 초과 정책에 따라 처리합니다"
-	reasonManualDeny           = "사람이 실행을 거부했습니다"
-	reasonManualAllow          = "사람이 실행을 허용했습니다"
+	msgReviewContextIncomplete = "审阅上下文不完整，需要人工确认："
+	msgModelApprovalFailed     = "模型审批失败，按失败策略处理："
+	msgModelOutputUnparsable   = "无法解析模型输出，按失败策略处理"
+	msgToolApprovalRequestFmt  = "工具 %s 审批请求 (#%d)"
+	reasonWorkCanceled         = "任务已取消"
+	reasonWorkCanceledPreExec  = "任务在执行前已被取消"
+	reasonApprovalTimeout      = "审批超时，按超时策略处理"
+	reasonManualDeny           = "人工拒绝执行"
+	reasonManualAllow          = "人工允许执行"
 )
 
 // ctxKey is the unexported context key type to avoid collisions.
@@ -563,9 +563,9 @@ func ruleMatches(r compiledRule, toolName string, input []byte) bool {
 func defaultMessage(action, name string) string {
 	switch action {
 	case "deny":
-		return "가로채기 규칙 [" + name + "] 에 따라 이 도구를 실행할 수 없습니다"
+		return "拦截规则 [" + name + "] 无法执行该工具"
 	case "ask":
-		return "가로채기 규칙 [" + name + "] 에 따라 사용자 승인이 필요합니다. 잠시 기다려 주세요"
+		return "拦截规则 [" + name + "] 需要用户审批，请稍候"
 	default:
 		return ""
 	}
@@ -678,7 +678,7 @@ func (i *Interceptor) HandleAsk(ctx context.Context, convID int64, dec Decision,
 	}
 }
 
-var ErrAlreadyDecided = errors.New("이미 처리되었거나 존재하지 않는 승인입니다. 기록을 새로 고쳐 주세요")
+var ErrAlreadyDecided = errors.New("该审批记录已被处理或不存在，请刷新记录")
 
 // Decide resolves a pending request. Called by the HTTP decide endpoint.
 func (i *Interceptor) Decide(pendingID int64, allowed bool) error {

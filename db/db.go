@@ -22,10 +22,9 @@ var schemaSQL string
 
 const schemaMigrationLockKey int64 = 7337741001
 
-// maxOpenConns 는 연결 풀 상한이다(`Open` 참조). PostgreSQL 기본 max_connections(100)
-// 보다 충분히 낮고, 애플리케이션 자신의 중첩 커넥션 깊이(기동기의 스키마 advisory lock 이
-// 커넥션 하나를 쥔 채 seedBuiltins 가 다른 커넥션을 잡는다)보다는 충분히 높아 자기 잠금에
-// 빠지지 않는다.
+// maxOpenConns 是连接池上限（见 `Open`）。它明显低于 PostgreSQL 默认的
+// max_connections(100)，又明显高于应用自身的嵌套连接深度（启动时的 schema advisory lock
+// 占住一个连接，seedBuiltins 再去拿另一个连接），因此不会卡在自我加锁上。
 const maxOpenConns = 32
 
 var schemaDeadlockRetryDelays = [...]time.Duration{
@@ -139,12 +138,11 @@ func Open(dsn string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	// database/sql 은 기본적으로 커넥션 수를 제한하지 않아, 풀에 유휴 커넥션이 없으면 무조건
-	// 새로 열어 PostgreSQL 의 max_connections(기본 100)까지 밀어붙이고 나서야 거절당한다.
-	// 그러면 부하가 높을 때 쿼리는 "읽을 값이 없음"이 아니라 `FATAL: sorry, too many clients
-	// already` 라는 오류를 받고, 이 오류는 아래 인증 경로의 "읽기 실패"와 같은 모양이 된다.
-	// 상한을 두면 초과분은 유휴 커넥션을 기다려(오류 대신 느려짐), reset-password.sh·psql 을
-	// 위한 여유도 남는다. max_connections 를 낮춰 운영하면 이 값도 함께 낮춘다.
+	// database/sql 默认不限制连接数：池里没有空闲连接时它会无脑新建，直到撞上 PostgreSQL 的
+	// max_connections（默认 100）才被拒绝。这样高负载时查询收到的不是「没有可读的值」，而是
+	// `FATAL: sorry, too many clients already` 这类错误，形状与下面认证路径的「读取失败」相同。
+	// 设了上限后，超出的部分会去等空闲连接（表现为变慢而不是报错），也能为
+	// reset-password.sh、psql 留出余量。若调低 max_connections 运维，这个值也要一起调低。
 	sqlDB.SetMaxOpenConns(maxOpenConns)
 	sqlDB.SetMaxIdleConns(maxOpenConns)
 	sqlDB.SetConnMaxLifetime(30 * time.Minute)

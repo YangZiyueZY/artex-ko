@@ -19,42 +19,40 @@ func TestShutdownContextPreservesNamedCause(t *testing.T) {
 	signalCancel()
 	<-ctx.Done()
 	if code, _, _, ok := agent.AbortReason(ctx); !ok || code != "shutdown" {
-		t.Fatalf("code=%q ok=%v, want shutdown", code, ok)
+		t.Fatalf("code=%q ok=%v，期望 shutdown", code, ok)
 	}
 }
 
-// TestPrintBannerLocalized verifies that the startup banner printed to stdout is
-// Korean and carries no leftover CJK Han characters. This is the first thing a
-// user sees when running ARTEX, so it must not stay in Chinese (backlog F11).
-// The "[config] ..." log lines in run() are intentionally out of scope — they
-// are logs, which the localization brief ranks lowest (backlog Z2).
+// TestPrintBannerLocalized 检查打到 stdout 的启动横幅是简体中文、且不残留韩文。
+// 横幅是用户运行 ARTEX 时看到的第一屏内容（backlog F11）。run() 里的
+// "[config] ..." 日志行刻意不在范围内——那是日志，汉化方针把它排在最低优先级（Z2）。
 func TestPrintBannerLocalized(t *testing.T) {
 	out := captureStdout(t, func() { printBanner(":8787") })
-	t.Logf("배너 샘플:\n%s", out)
+	t.Logf("横幅示例：\n%s", out)
 
 	hasHangul := strings.ContainsFunc(out, func(r rune) bool {
 		return unicode.Is(unicode.Hangul, r)
 	})
-	if !hasHangul {
-		t.Fatalf("배너에 한글이 없다: %q", out)
+	if hasHangul {
+		t.Fatalf("横幅中残留韩文：%q", out)
 	}
 
-	for _, want := range []string{"자율 침투 테스트 시스템", "버전", "수신 대기", ":8787"} {
+	for _, want := range []string{"自主渗透测试系统", "版本", "监听", ":8787"} {
 		if !strings.Contains(out, want) {
-			t.Errorf("배너에 %q 가 없다: %q", want, out)
+			t.Errorf("横幅中缺少 %q：%q", want, out)
 		}
 	}
 
-	for _, r := range out {
-		if unicode.Is(unicode.Han, r) {
-			t.Errorf("배너에 CJK 한자 잔재(%q): %q", r, out)
-		}
+	hasHan := strings.ContainsFunc(out, func(r rune) bool {
+		return unicode.Is(unicode.Han, r)
+	})
+	if !hasHan {
+		t.Errorf("横幅中没有中文汉字：%q", out)
 	}
 }
 
-// captureStdout redirects os.Stdout for the duration of fn and returns whatever
-// fn wrote. printBanner uses fmt.Print*, which resolves os.Stdout at call time,
-// so swapping it here captures the banner.
+// captureStdout 在 fn 执行期间重定向 os.Stdout，并返回 fn 写入的内容。
+// printBanner 用的是 fmt.Print*，在调用时才解析 os.Stdout，所以在这里替换即可捕获横幅。
 func captureStdout(t *testing.T, fn func()) string {
 	t.Helper()
 	orig := os.Stdout

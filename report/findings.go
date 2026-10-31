@@ -13,75 +13,74 @@ import (
 	"github.com/Autumn-27/artex/db"
 )
 
-// 취약점 페이지의 「내보내기」용 렌더링: 여러 건의 findings 테이블 행을 요약 Markdown,
-// 개별 Markdown, 또는 CSV 로 렌더링한다. JSON 은 server 계층이 DTO 로 직접 직렬화하므로
-// 여기서는 다루지 않는다.
+// 漏洞页面「导出」的渲染：把多条 findings 表记录渲染为摘要 Markdown、
+// 单条 Markdown，或 CSV。JSON 由 server 层直接按 DTO 序列化，因此
+// 这里不处理。
 
-// sortFindingsForExport 는 심각도 내림차순, 그다음 시각 역순으로 정렬한다. 요약 보고서의 그룹화와 동일하다.
+// sortFindingsForExport 按严重程度降序、再按时间倒序排序。与摘要报告的分组一致。
 func sortFindingsForExport(fs []*db.DBFinding) {
 	sort.SliceStable(fs, func(i, j int) bool {
 		ri, rj := sevRank[fs[i].Severity], sevRank[fs[j].Severity]
 		if ri != rj {
-			return ri < rj // sevRank 는 값이 작을수록 심각하다
+			return ri < rj // sevRank 的值越小表示越严重
 		}
 		return fs[i].CreatedAt.After(fs[j].CreatedAt)
 	})
 }
 
-// findingTitle 은 취약점의 사람이 읽을 수 있는 제목을 고른다: 이름 → 유형 → 「미분류」.
+// findingTitle 选取漏洞的人类可读标题：名称 → 类型 → 「未分类」。
 func findingTitle(f *db.DBFinding) string {
-	return nz(f.Name, nz(f.VulnClass, "미분류"))
+	return nz(f.Name, nz(f.VulnClass, "未分类"))
 }
 
-// FindingsMarkdown 은 여러 건의 findings 를 하나의 요약 보고서로 통합한다(요약 + 심각도별
-// 그룹화, 각 건은 유형/상태/소속 작업/증거/상세 보고서를 포함).
+// FindingsMarkdown 把多条 findings 汇总为一份摘要报告（概要 + 按严重程度分组，每条包含类型/状态/所属任务/证据/详细报告）。
 func FindingsMarkdown(fs []*db.DBFinding, generatedAt time.Time) string {
 	items := append([]*db.DBFinding(nil), fs...)
 	sortFindingsForExport(items)
 
 	var b strings.Builder
-	b.WriteString("# 취약점 요약 보고서\n\n")
-	fmt.Fprintf(&b, "- **생성 시각**: %s\n", generatedAt.Format("2006-01-02 15:04:05"))
-	fmt.Fprintf(&b, "- **취약점 총계**: %d건\n\n", len(items))
+	b.WriteString("# 漏洞摘要报告\n\n")
+	fmt.Fprintf(&b, "- **生成时间**: %s\n", generatedAt.Format("2006-01-02 15:04:05"))
+	fmt.Fprintf(&b, "- **漏洞总数**: %d 条\n\n", len(items))
 
-	// 요약: 심각도별 집계.
+	// 概要：按严重程度汇总。
 	counts := map[string]int{}
 	for _, f := range items {
 		counts[f.Severity]++
 	}
-	b.WriteString("## 요약\n\n")
-	b.WriteString("| 심각도 | 개수 |\n| --- | --- |\n")
+	b.WriteString("## 概要\n\n")
+	b.WriteString("| 严重程度 | 数量 |\n| --- | --- |\n")
 	for _, s := range []struct{ key, label string }{
-		{"critical", "심각"}, {"high", "높음"}, {"medium", "중간"}, {"low", "낮음"},
+		{"critical", "严重"}, {"high", "高"}, {"medium", "中"}, {"low", "低"},
 	} {
 		fmt.Fprintf(&b, "| %s | %d |\n", s.label, counts[s.key])
 	}
 	b.WriteString("\n")
 
 	if len(items) == 0 {
-		b.WriteString("_일치하는 취약점이 없습니다._\n")
+		b.WriteString("_没有匹配的漏洞。_\n")
 		return b.String()
 	}
 
-	b.WriteString("## 취약점 상세\n\n")
+	b.WriteString("## 漏洞详情\n\n")
 	for i, f := range items {
 		fmt.Fprintf(&b, "### %d. [%s] %s\n\n", i+1, strings.ToUpper(nz(f.Severity, "info")), findingTitle(f))
 		if f.VulnClass != "" {
-			fmt.Fprintf(&b, "- **유형**: %s\n", f.VulnClass)
+			fmt.Fprintf(&b, "- **类型**: %s\n", f.VulnClass)
 		}
-		fmt.Fprintf(&b, "- **상태**: %s\n", nz(f.Status, "pending"))
+		fmt.Fprintf(&b, "- **状态**: %s\n", nz(f.Status, "pending"))
 		if desc := strings.TrimSpace(f.TaskDescription); desc != "" {
-			fmt.Fprintf(&b, "- **소속 작업**: %s\n", desc)
+			fmt.Fprintf(&b, "- **所属任务**: %s\n", desc)
 		}
-		fmt.Fprintf(&b, "- **발견 시각**: %s\n\n", f.CreatedAt.Format("2006-01-02 15:04:05"))
+		fmt.Fprintf(&b, "- **发现时间**: %s\n\n", f.CreatedAt.Format("2006-01-02 15:04:05"))
 		if s := strings.TrimSpace(f.Summary); s != "" {
 			fmt.Fprintf(&b, "%s\n\n", s)
 		}
 		if e := strings.TrimSpace(f.Evidence); e != "" {
-			fmt.Fprintf(&b, "**증거:**\n\n```\n%s\n```\n\n", e)
+			fmt.Fprintf(&b, "**证据：**\n\n```\n%s\n```\n\n", e)
 		}
 		if rep := strings.TrimSpace(f.Report); rep != "" {
-			b.WriteString("**상세 보고서:**\n\n")
+			b.WriteString("**详细报告：**\n\n")
 			b.WriteString(rep)
 			b.WriteString("\n\n")
 		}
@@ -91,28 +90,28 @@ func FindingsMarkdown(fs []*db.DBFinding, generatedAt time.Time) string {
 	return b.String()
 }
 
-// SingleFindingMarkdown 은 개별 취약점을 독립된 Markdown 한 건으로 렌더링한다(「취약점 하나당 파일 하나」 묶음에 사용).
+// SingleFindingMarkdown 把单条漏洞渲染为独立的 Markdown 文档（用于「一个漏洞一个文件」的打包）。
 func SingleFindingMarkdown(f *db.DBFinding, generatedAt time.Time) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# [%s] %s\n\n", strings.ToUpper(nz(f.Severity, "info")), findingTitle(f))
 	if f.VulnClass != "" {
-		fmt.Fprintf(&b, "- **유형**: %s\n", f.VulnClass)
+		fmt.Fprintf(&b, "- **类型**: %s\n", f.VulnClass)
 	}
-	fmt.Fprintf(&b, "- **심각도**: %s\n", nz(f.Severity, "info"))
-	fmt.Fprintf(&b, "- **상태**: %s\n", nz(f.Status, "pending"))
+	fmt.Fprintf(&b, "- **严重程度**: %s\n", nz(f.Severity, "info"))
+	fmt.Fprintf(&b, "- **状态**: %s\n", nz(f.Status, "pending"))
 	if desc := strings.TrimSpace(f.TaskDescription); desc != "" {
-		fmt.Fprintf(&b, "- **소속 작업**: %s\n", desc)
+		fmt.Fprintf(&b, "- **所属任务**: %s\n", desc)
 	}
-	fmt.Fprintf(&b, "- **발견 시각**: %s\n", f.CreatedAt.Format("2006-01-02 15:04:05"))
-	fmt.Fprintf(&b, "- **생성 시각**: %s\n\n", generatedAt.Format("2006-01-02 15:04:05"))
+	fmt.Fprintf(&b, "- **发现时间**: %s\n", f.CreatedAt.Format("2006-01-02 15:04:05"))
+	fmt.Fprintf(&b, "- **生成时间**: %s\n\n", generatedAt.Format("2006-01-02 15:04:05"))
 	if s := strings.TrimSpace(f.Summary); s != "" {
-		fmt.Fprintf(&b, "## 개요\n\n%s\n\n", s)
+		fmt.Fprintf(&b, "## 概要\n\n%s\n\n", s)
 	}
 	if e := strings.TrimSpace(f.Evidence); e != "" {
-		fmt.Fprintf(&b, "## 증거\n\n```\n%s\n```\n\n", e)
+		fmt.Fprintf(&b, "## 证据\n\n```\n%s\n```\n\n", e)
 	}
 	if rep := strings.TrimSpace(f.Report); rep != "" {
-		b.WriteString("## 상세 보고서\n\n")
+		b.WriteString("## 详细报告\n\n")
 		b.WriteString(rep)
 		b.WriteString("\n")
 	}
@@ -122,8 +121,8 @@ func SingleFindingMarkdown(f *db.DBFinding, generatedAt time.Time) string {
 
 var unsafeFilenameChars = regexp.MustCompile(`[^\p{Han}\p{L}\p{N}._-]+`)
 
-// FindingFilename 은 「취약점 하나당 파일 하나」를 위해 안전한 .md 파일 이름을 생성한다.
-// 예: `critical_SQL주입_#123.md`. 경로 구분자와 제어 문자를 제거하여 zip 내 비정상 경로를 막는다.
+// FindingFilename 为「一个漏洞一个文件」生成安全的 .md 文件名。
+// 例如：`critical_SQL注入_#123.md`。会移除路径分隔符与控制字符，防止 zip 内出现异常路径。
 func FindingFilename(f *db.DBFinding) string {
 	sev := nz(f.Severity, "info")
 	title := findingTitle(f)
@@ -133,7 +132,7 @@ func FindingFilename(f *db.DBFinding) string {
 	if name == "" {
 		name = fmt.Sprintf("finding_%d", f.ID)
 	}
-	// 방어적 처리: 경로를 한 번 더 벗겨 zip slip 을 차단한다.
+	// 防御性处理：再剥离一次路径，阻断 zip slip。
 	name = path.Base(name)
 	if len(name) > 120 {
 		name = name[:120]
@@ -141,9 +140,9 @@ func FindingFilename(f *db.DBFinding) string {
 	return name + ".md"
 }
 
-// FindingsCSV 는 여러 건의 findings 를 CSV 로 렌더링한다(UTF-8 BOM 포함, Excel 이 한글을
-// 올바르게 인식하도록). 긴 report/evidence 전문은 담지 않고 요약 성격의 필드만 넣는다.
-// 전문이 필요하면 Markdown/JSON 으로 내보낸다.
+// FindingsCSV 把多条 findings 渲染为 CSV（含 UTF-8 BOM，便于 Excel 正确识别中文）。
+// 不放冗长的 report/evidence 全文，只放摘要性质的字段。
+// 需要全文时导出为 Markdown/JSON。
 func FindingsCSV(fs []*db.DBFinding) []byte {
 	items := append([]*db.DBFinding(nil), fs...)
 	sortFindingsForExport(items)
@@ -151,7 +150,7 @@ func FindingsCSV(fs []*db.DBFinding) []byte {
 	var buf bytes.Buffer
 	buf.WriteString("\xEF\xBB\xBF") // UTF-8 BOM
 	w := csv.NewWriter(&buf)
-	_ = w.Write([]string{"ID", "이름", "유형", "심각도", "상태", "소속 작업", "발견 시각", "개요", "트래픽 증거 개수", "트래픽 증거 ID"})
+	_ = w.Write([]string{"ID", "名称", "类型", "严重程度", "状态", "所属任务", "发现时间", "概要", "流量证据数量", "流量证据 ID"})
 	for _, f := range items {
 		_ = w.Write([]string{
 			fmt.Sprintf("%d", f.ID),
@@ -183,18 +182,18 @@ func findingTrafficMarkdown(f *db.DBFinding, attachments bool) string {
 		return ""
 	}
 	var out strings.Builder
-	out.WriteString("\n## 관련 트래픽 증거\n\n")
-	fmt.Fprintf(&out, "증거 버전: %d, 바인딩 개수: %d.\n\n", f.EvidenceVersion, len(f.TrafficBindings))
+	out.WriteString("\n## 相关流量证据\n\n")
+	fmt.Fprintf(&out, "证据版本：%d，绑定数量：%d。\n\n", f.EvidenceVersion, len(f.TrafficBindings))
 	if stale {
-		out.WriteString("증거가 변경되어 상세 보고서를 갱신해야 합니다.\n\n")
+		out.WriteString("证据已变更，需要更新详细报告。\n\n")
 	}
 	for i, b := range f.TrafficBindings {
-		fmt.Fprintf(&out, "%d. **증거 #%d · %s**: `%s %s`, 상태 코드 %d\n", i+1, b.ID, b.Role, b.Snapshot.Method, strings.ReplaceAll(b.Snapshot.URL, "`", "%60"), b.Snapshot.Status)
+		fmt.Fprintf(&out, "%d. **证据 #%d · %s**: `%s %s`，状态码 %d\n", i+1, b.ID, b.Role, b.Snapshot.Method, strings.ReplaceAll(b.Snapshot.URL, "`", "%60"), b.Snapshot.Status)
 		if b.Note != "" {
 			fmt.Fprintf(&out, "   %s\n", strings.ReplaceAll(b.Note, "\n", "\n   "))
 		}
 		if attachments {
-			fmt.Fprintf(&out, "   [요청 메시지](evidence/%d/%d/request.http) · [응답 메시지](evidence/%d/%d/response.http)\n", f.ID, b.ID, f.ID, b.ID)
+			fmt.Fprintf(&out, "   [请求消息](evidence/%d/%d/request.http) · [响应消息](evidence/%d/%d/response.http)\n", f.ID, b.ID, f.ID, b.ID)
 		}
 	}
 	out.WriteString("\n")

@@ -6,17 +6,16 @@ import (
 	"unicode"
 )
 
-// A2: wrap-up / settlement 프롬프트 한국어화.
+// A2：收尾/结算提示词（wrap-up / settlement prompt）中文化守卫。
 //
-// 이 상수들은 run 또는 task 가 단계/시간 예산에 걸려 종료될 때 settlement 단계에서
-// 주입되어, 사용자에게 그대로 노출되는 최종 요약을 직접 지시한다. 따라서 (1) 한국어로
-// 작성되어야 하고, (2) 중국어(CJK 한자) 잔재가 없어야 하며, (3) 도구 이름과
-// "한 문장 순수 텍스트" 같은 지시 의미가 보존되어야 한다.
+// 这些常量在 run 或任务因步骤/时长预算被终止时由 settlement 阶段注入，直接决定
+// 展示给用户的最终摘要，因此 (1) 必须是简体中文（含汉字）、(2) 不得残留韩文
+// （Hangul）、(3) 工具名与「只用一句话纯文本」这类指令含义必须原样保留。
 //
-// DB 시드는 wrapup_prompt / task_timeout_wrapup_prompt 를 빈 문자열로 두고(db/db.go 의
-// builtin 에이전트 INSERT 는 이 컬럼을 채우지 않는다), 비어 있으면 이 상수로 떨어진다.
-// 즉 이 상수들이 wrap-up 문구의 유일한 원천이다.
-func TestWrapupPromptsLocalizedToKorean(t *testing.T) {
+// DB 里 wrapup_prompt / task_timeout_wrapup_prompt 默认为空串（db/db.go 的 builtin
+// 智能体 INSERT 不填这两列），为空即回落到这里的常量，也就是说这些常量是收尾文句
+// 的唯一来源。
+func TestWrapupPromptsLocalizedToChinese(t *testing.T) {
 	all := map[string]string{
 		"settleWrapUpPrompt":        settleWrapUpPrompt,
 		"plannerWrapUpDefault":      plannerWrapUpDefault,
@@ -36,67 +35,135 @@ func TestWrapupPromptsLocalizedToKorean(t *testing.T) {
 	}
 
 	for name, p := range all {
-		if !hasScript(p, unicode.Hangul) {
-			t.Errorf("%s: 한글이 전혀 없어 한국어화되지 않았다", name)
+		if !hasScript(p, unicode.Han) {
+			t.Errorf("%s：没有中文汉字，未被中文化：%q", name, p)
 		}
-		// 도구 이름은 ASCII, 한글은 Hangul 블록이라 번역이 끝났다면 CJK 한자가 하나도 없어야 한다.
-		if hasScript(p, unicode.Han) {
-			t.Errorf("%s: CJK 한자 잔재가 남아 번역이 미완이다: %q", name, p)
+		// 中文化完成后不应残留韩文：Hangul 与汉字分属不同 Unicode 区块，可以精确判定。
+		if hasScript(p, unicode.Hangul) {
+			t.Errorf("%s：仍残留韩文，翻译未完成：%q", name, p)
 		}
 	}
 
-	// 도구 이름은 식별자이므로 번역하지 않고 그대로 보존되어야 한다.
-	// worker 계열(per-run·task-timeout)은 record_fact 로 결론을, report_finding 으로
-	// 취약점을 쓰고, 마지막에 한 문장 순수 텍스트로 요약하라는 지시를 유지한다.
+	// 工具名是标识符，不参与翻译，必须原样保留。
+	// worker 系（per-run·task-timeout）要用 record_fact 落结论、report_finding 落漏洞，
+	// 最后只用一句话纯文本向用户总结。
 	mustContain := func(name, p string, subs ...string) {
 		for _, s := range subs {
 			if !strings.Contains(p, s) {
-				t.Errorf("%s: 지시 의미 %q 가 보존되어야 하는데 없다", name, s)
+				t.Errorf("%s：应保留的指令含义 %q 缺失", name, s)
 			}
 		}
 	}
 	mustContain("settleWrapUpPrompt", settleWrapUpPrompt,
-		"insert_assets", "record_fact", "report_finding", "한 문장", "순수 텍스트")
+		"insert_assets", "record_fact", "report_finding", "一句话", "纯文本")
 	mustContain("workerTaskTimeoutDefault", workerTaskTimeoutDefault,
-		"insert_assets", "record_fact", "report_finding", "한 문장", "순수 텍스트")
-	mustContain("genericWrapUpDefault", genericWrapUpDefault, "한 문장", "순수 텍스트")
-	mustContain("mainAgentWrapUpDefault", mainAgentWrapUpDefault, "한 문장", "순수 텍스트")
-	// planner 는 요약 문장을 내지 않고(판정만 하고 종료) 의도·목표·할일 도구를 유지한다.
+		"insert_assets", "record_fact", "report_finding", "一句话", "纯文本")
+	mustContain("genericWrapUpDefault", genericWrapUpDefault, "一句话", "纯文本")
+	mustContain("mainAgentWrapUpDefault", mainAgentWrapUpDefault, "一句话", "纯文本")
+	// planner 不出总结句（只做判定然后结束），但保留意图·目标·待办工具。
 	mustContain("plannerWrapUpDefault", plannerWrapUpDefault, "add_intent", "prove_goal", "TodoWrite")
 	mustContain("plannerTaskTimeoutDefault", plannerTaskTimeoutDefault, "prove_goal")
+
+	// 下面这组把 worker / mainagent / planner 三类角色的语义差异钉死，防止有人把
+	// 默认值统一替换成同一段中文文案后测试仍然是绿的。
+	mustNotContain := func(name, p string, subs ...string) {
+		for _, s := range subs {
+			if strings.Contains(p, s) {
+				t.Errorf("%s：不应出现 %q", name, s)
+			}
+		}
+	}
+	// 会产出用户可见总结的角色：必须点名用简体中文书写。
+	for _, name := range []string{"settleWrapUpPrompt", "mainAgentWrapUpDefault", "genericWrapUpDefault", "workerTaskTimeoutDefault"} {
+		mustContain(name, all[name], "简体中文")
+	}
+	// planner 系两个默认值都明确「不输出总结文本」，因此不得出现「一句话」总结指令。
+	mustContain("plannerWrapUpDefault", plannerWrapUpDefault, "不输出总结文本", "任务本身并未结束")
+	mustContain("plannerTaskTimeoutDefault", plannerTaskTimeoutDefault, "不输出总结文本", "不要再产生任何新意图")
+	mustNotContain("plannerWrapUpDefault", plannerWrapUpDefault, "一句话")
+	mustNotContain("plannerTaskTimeoutDefault", plannerTaskTimeoutDefault, "一句话", "add_intent")
+	// worker 的 per-run 谈「本次执行」的预算，task-timeout 谈「整个任务」的时长上限。
+	mustContain("settleWrapUpPrompt", settleWrapUpPrompt, "本次执行")
+	mustContain("workerTaskTimeoutDefault", workerTaskTimeoutDefault, "整个任务已到达时长上限")
+	mustNotContain("workerTaskTimeoutDefault", workerTaskTimeoutDefault, "本次规划轮次")
+	// mainagent 只谈本次交互，不涉及任务级超时（它没有 task-timeout 文案）。
+	mustContain("mainAgentWrapUpDefault", mainAgentWrapUpDefault, "步骤预算即将耗尽")
+	mustNotContain("mainAgentWrapUpDefault", mainAgentWrapUpDefault, "整个任务已到达时长上限")
 }
 
-// per-run 과 task-timeout 은 의미가 달라야 한다(특히 planner): per-run 은 "이번 라운드만
-// 끝난다"이고 task-timeout 은 "작업 전체가 끝난다"이다. 상수 매핑이 바뀌어 섞이면 안 된다.
+// per-run 与 task-timeout 的含义必须不同（尤其是 planner）：per-run 是「只结束本轮」，
+// task-timeout 是「整个任务到点结束」。常量映射若被打乱、两者混同就会在这里报错。
 func TestWrapupDefaultsRouting(t *testing.T) {
 	if WrapupDefault("worker") != settleWrapUpPrompt {
-		t.Error("worker per-run 기본값이 settleWrapUpPrompt 가 아니다")
+		t.Error("worker 的 per-run 默认值不是 settleWrapUpPrompt")
 	}
 	if WrapupDefault("planner") != plannerWrapUpDefault {
-		t.Error("planner per-run 기본값이 plannerWrapUpDefault 가 아니다")
+		t.Error("planner 的 per-run 默认值不是 plannerWrapUpDefault")
 	}
 	if WrapupDefault("mainagent") != mainAgentWrapUpDefault {
-		t.Error("mainagent per-run 기본값이 mainAgentWrapUpDefault 가 아니다")
+		t.Error("mainagent 的 per-run 默认值不是 mainAgentWrapUpDefault")
 	}
-	// 미등록 키(커스텀 에이전트)는 generic 으로 떨어진다.
+	// 未注册的 key（自定义智能体）回落到 generic。
 	if WrapupDefault("unknown-agent") != genericWrapUpDefault {
-		t.Error("미등록 키가 genericWrapUpDefault 로 떨어지지 않는다")
+		t.Error("未注册的 key 没有回落到 genericWrapUpDefault")
 	}
-	// task-timeout 은 worker/planner 에만 있고, 그 외는 빈 문자열(호출부가 per-run 으로 회귀).
+	// task-timeout 只给 worker/planner 配置，其余为空串（调用方回落到 per-run）。
 	if TaskTimeoutWrapupDefault("worker") != workerTaskTimeoutDefault {
-		t.Error("worker task-timeout 기본값이 workerTaskTimeoutDefault 가 아니다")
+		t.Error("worker 的 task-timeout 默认值不是 workerTaskTimeoutDefault")
 	}
 	if TaskTimeoutWrapupDefault("planner") != plannerTaskTimeoutDefault {
-		t.Error("planner task-timeout 기본값이 plannerTaskTimeoutDefault 가 아니다")
+		t.Error("planner 的 task-timeout 默认值不是 plannerTaskTimeoutDefault")
 	}
 	if TaskTimeoutWrapupDefault("mainagent") != "" {
-		t.Error("mainagent 은 task-timeout 문구가 없어야 한다(빈 문자열)")
+		t.Error("mainagent 不应有 task-timeout 文案（应为空字符串）")
 	}
-	// per-run 과 task-timeout 문구가 동일하면 의미 구분이 사라진 것이다.
+	// per-run 与 task-timeout 文案相同，就意味着语义区分已经消失。
 	if workerTaskTimeoutDefault == settleWrapUpPrompt {
-		t.Error("worker 의 per-run 과 task-timeout 문구가 동일하다")
+		t.Error("worker 的 per-run 与 task-timeout 文案相同")
 	}
 	if plannerTaskTimeoutDefault == plannerWrapUpDefault {
-		t.Error("planner 의 per-run 과 task-timeout 문구가 동일하다")
+		t.Error("planner 的 per-run 与 task-timeout 文案相同")
+	}
+}
+
+// TestWrapupLangTailAcrossLanguages 固定 withWrapupLang 的语言切换覆盖：收尾提示词不像
+// 系统提示词那样自带尾巴，必须靠这里追加 langDirective，否则用户看到的最后一句总结就不
+// 受所选展示语言约束。内置收尾正文本身是简体中文操作指令，因此【所有】可切换语言（含
+// ko）都要追加对应尾巴——少了这一条，选韩语/英语的用户会收到中文总结。
+func TestWrapupLangTailAcrossLanguages(t *testing.T) {
+	t.Cleanup(func() { OutputLanguage = nil })
+
+	const body = "收尾正文。"
+	for _, code := range SupportedOutputLangs {
+		lang := code
+		OutputLanguage = func() string { return lang }
+		got := withWrapupLang(body)
+
+		if want := body + langDirective(lang); got != want {
+			t.Errorf("%s：withWrapupLang 没有追加所选语言的尾巴，got %q want %q", lang, got, want)
+		}
+		if !strings.Contains(got, "输出语言规约") || !strings.Contains(got, langMarker[lang]) {
+			t.Errorf("%s：收尾提示词缺少点名 %q 的输出语言尾巴：%q", lang, langMarker[lang], got)
+		}
+		// 正文是中文指令，展示语言非中文时必须带上「不得把中文输出给用户」的反漂移条款；
+		// 展示语言就是中文时该条款必须缺席。
+		hasNoZhClause := strings.Contains(got, "也绝不能把中文输出给用户")
+		if lang == "zh" && hasNoZhClause {
+			t.Errorf("zh：展示语言为中文时不应禁止中文输出：%q", got)
+		}
+		if lang != "zh" && !hasNoZhClause {
+			t.Errorf("%s：收尾提示词缺少禁止中文泄漏给用户的条款：%q", lang, got)
+		}
+	}
+
+	// 钩子未接线（agent 包单测的默认路径）时走 defaultOutputLang，尾巴必须点名简体中文。
+	OutputLanguage = nil
+	gotDefault := withWrapupLang(body)
+	if !strings.Contains(gotDefault, "输出语言规约") || !strings.Contains(gotDefault, langBare[defaultOutputLang]) {
+		t.Errorf("默认语言 %s 的收尾提示词缺少中文输出尾巴：%q", defaultOutputLang, gotDefault)
+	}
+	// 空文案（如 mainagent 的 task-timeout）原样返回，不追加尾巴。
+	if got := withWrapupLang(""); got != "" {
+		t.Errorf("空提示词不应被追加尾巴：%q", got)
 	}
 }
