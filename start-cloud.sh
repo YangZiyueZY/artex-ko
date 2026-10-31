@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Render는 PORT 환경변수를 임의로 할당하므로, 해당 포트로 앱이 켜지도록 인자 지정
-# 기본 실행 및 스킬/데이터 경로 유지
-: "${PORT:?PORT 환경변수가 설정되어 있어야 합니다}"
+# Render 会随机分配 PORT 环境变量，因此指定该端口让应用启动
+# 保持默认执行方式以及技能/数据路径
+: "${PORT:?必须设置 PORT 环境变量}"
 echo "[*] Starting ARTEX Server on port :$PORT"
 exec ./artex -addr ":$PORT"

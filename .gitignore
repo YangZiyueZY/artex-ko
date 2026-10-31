@@ -55,31 +55,31 @@ Thumbs.db
 /bench/
 /Dockerfile.bench
 /Dockerfile.bench.v2
-# --- artex-global 로컬 운영: 커밋 금지 (소유자 지시: 테스트/스캔 결과 비공개) ---
+# --- artex-global 本地运维：禁止提交（所有者指示：测试/扫描结果不公开） ---
 work/
 test-results/
 scan-output/
 evidence-local/
-# 데모 앱을 로컬에서 기동하면 생기는 런타임 데이터(녹화 프록시 트래픽 인덱스 DB·
-# mitmproxy CA 개인키 등)라 공개 저장소에 커밋하지 않는다(BRIEF 경계 #2).
+# 本地启动演示应用产生的运行时数据（录制代理流量索引 DB、
+# mitmproxy CA 私钥等），不提交到公开仓库（BRIEF 边界 #2）。
 /demo-data/
 *.local.env
-# D2 모델 비교 라이브 테스트: package agent 내부라 work/ 밖에 둘 수밖에 없고,
-# OPENROUTER_API_KEY·네트워크를 소비하는 로컬 전용 산출물이라 공개 저장소에
-# 커밋하지 않는다(BRIEF 경계 #2). 정확한 경로만 막아 상류 추적 테스트는 건드리지 않는다.
+# D2 模型对比实际测试：因为位于 package agent 内部，只能放在 work/ 之外；
+# 且会消耗 OPENROUTER_API_KEY 和网络的本地专用产物，不提交到公开仓库
+# （BRIEF 边界 #2）。只屏蔽精确路径，不影响上游跟踪的测试。
 agent/d2_models_live_test.go
 
-# API 키·비밀: 어디에 두든 커밋 금지
+# API 密钥·机密：无论放在哪里都禁止提交
 *.env
 secrets.env
 
-# --- Windows 소스 빌드 로컬 산출물: 커밋 금지 ---
-# go build -o artex.exe 로 생기는 Windows 단일 바이너리(유닉스판 /artex 와 대응)
+# --- Windows 源码构建本地产物：禁止提交 ---
+# go build -o artex.exe 生成的 Windows 单文件二进制（对应 Unix 版 /artex）
 /artex.exe
-# 로컬 설정에 쓴 비밀(예: PostgreSQL 비밀번호). 절대 커밋하지 않는다.
+# 本地配置中使用的机密（例如 PostgreSQL 密码）。绝对不要提交。
 /.secrets/
-# SWC_NATIVE_BINDING_CACHE 를 프로젝트 하위로 돌릴 때 생기는 네이티브 바인딩 캐시
+# 把 SWC_NATIVE_BINDING_CACHE 指向项目子目录时产生的原生绑定缓存
 /.swc-cache/
-# artex.exe 를 포그라운드로 띄울 때 리다이렉트한 런타임 로그
+# 前台运行 artex.exe 时重定向的运行时日志
 /artex.out.log
 /artex.err.log
