@@ -1,6 +1,6 @@
 # ARTEX 침해지표 (기계가 읽는)
 
-한국어 · [English](README.md)
+[中文](README.md) · [English](README.en.md) · 한국어
 
 ARTEX 가 스스로 내보내는 고유 지문을 한 파일로 모은, 기계가 읽는 목록입니다. 탐지 로직이 아니라
 원자 지표 자체를 원하는 방어자를 위한 것입니다: [`artex_indicators.csv`](artex_indicators.csv)를

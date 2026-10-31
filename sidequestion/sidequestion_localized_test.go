@@ -13,19 +13,19 @@ import (
 func assertKorean(t *testing.T, label, msg string) {
 	t.Helper()
 	if msg == "" {
-		t.Fatalf("%s: 빈 메시지", label)
+		t.Fatalf("%s: 消息为空", label)
 	}
 	hangul := false
 	for _, r := range msg {
 		if unicode.Is(unicode.Han, r) {
-			t.Fatalf("%s: 중국어 한자가 남아 있습니다: %q", label, msg)
+			t.Fatalf("%s：仍残留中文汉字：%q", label, msg)
 		}
 		if unicode.Is(unicode.Hangul, r) {
 			hangul = true
 		}
 	}
 	if !hangul {
-		t.Fatalf("%s: 한글이 없습니다: %q", label, msg)
+		t.Fatalf("%s：没有韩文：%q", label, msg)
 	}
 }
 
@@ -51,7 +51,7 @@ func TestSideQuestionOutputsLocalized(t *testing.T) {
 // context_test.go, which relies on it after the recovery path gives up).
 func TestSideQuestionBudgetSentinelPreserved(t *testing.T) {
 	if !errors.Is(fmt.Errorf("prepare: %w", ErrContextBudget), ErrContextBudget) {
-		t.Fatal("ErrContextBudget 센티넬 식별(errors.Is)이 깨졌습니다")
+		t.Fatal("ErrContextBudget 哨兵识别 (errors.Is) 被破坏")
 	}
 }
 
@@ -72,7 +72,7 @@ func TestSideQuestionBrainPreserved(t *testing.T) {
 			}
 		}
 		if !han {
-			t.Errorf("%s: 두뇌 프롬프트가 더 이상 중국어가 아닙니다(벤치마크 드리프트 위험)", c.label)
+			t.Errorf("%s: 大脑提示词不再是中文（存在基准漂移风险）", c.label)
 		}
 	}
 }

@@ -1,6 +1,6 @@
 # ARTEX 탐지 규칙 (Suricata / 네트워크)
 
-한국어 · [English](README.md)
+[中文](README.md) · [English](README.en.md) · 한국어
 
 [Sigma 규칙](../sigma/)의 네트워크 계층 짝입니다. 이 [Suricata](https://suricata.io) 시그니처는
 네트워크 선에서 관측되는 두 가지 ARTEX 산출물을 다루며, 모든 지표는 추정이 아니라 이 저장소

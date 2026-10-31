@@ -1,6 +1,6 @@
 # ARTEX ATT&CK 커버리지
 
-한국어 · [English](README.md)
+[中文](README.md) · [English](README.en.md) · 한국어
 
 이 저장소의 탐지 규칙이 태그하는 [MITRE ATT&CK](https://attack.mitre.org/)(Enterprise) 기법을
 Navigator 레이어로 정리한 것입니다. [Sigma 규칙](../sigma/)의 `attack.*` 태그에서 손으로 만들었고,

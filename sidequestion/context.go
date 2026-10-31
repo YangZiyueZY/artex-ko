@@ -13,19 +13,19 @@ import (
 	"github.com/Autumn-27/norma/llm"
 )
 
-// User-facing side-question context errors are Korean (BRIEF 현지화 방침). The
-// summaryInstruction prompt and the "[此前摘要]"/"[新材料片段]" framing below are
-// agent-brain text sent to the model, so they stay in their benchmarked Chinese.
+// 面向用户的旁路提问上下文错误使用简体中文（BRIEF 本地化方针）。下面的
+// summaryInstruction 提示词与「[此前摘要]」/「[新材料片段]」框架是发给模型的
+// 智能体大脑文本，因此保留经过基准测试的中文原文。
 var (
-	errSideSummaryCallCap    = errors.New("곁질문 컨텍스트 정리가 이번 처리 상한에 도달했습니다. 질문 범위를 좁힌 뒤 다시 시도해 주세요.")
-	errSideSummaryIncomplete = errors.New("곁질문 요약이 완전히 생성되지 않았습니다. 다시 시도해 주세요.")
-	errSideSummaryOverBudget = errors.New("곁질문 요약이 예산 이내로 줄어들지 않았습니다. 다시 시도해 주세요.")
-	errSideHistoryCursor     = errors.New("곁질문 기록 커서가 유효하지 않습니다.")
-	errSideCompactionStalled = errors.New("곁질문 압축으로 컨텍스트를 더 줄이지 못해 재시도를 중단했습니다.")
+	errSideSummaryCallCap    = errors.New("旁路提问上下文整理已达到本次处理上限。请缩小问题范围后重试。")
+	errSideSummaryIncomplete = errors.New("旁路提问摘要未能完整生成。请重试。")
+	errSideSummaryOverBudget = errors.New("旁路提问摘要未能缩减到预算以内。请重试。")
+	errSideHistoryCursor     = errors.New("旁路提问记录游标无效。")
+	errSideCompactionStalled = errors.New("旁路提问压缩无法进一步缩减上下文，已停止重试。")
 )
 
 // sideSummaryFailedPrefix prefixes a wrapped summarizer failure (keeps %w).
-const sideSummaryFailedPrefix = "곁질문 요약에 실패했습니다"
+const sideSummaryFailedPrefix = "旁路提问摘要失败"
 
 // Memory is independent of the main snapshot. Through is a persisted ordinal,
 // not an array offset; restart, pagination and failed requests cannot shift it.

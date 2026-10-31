@@ -1,6 +1,6 @@
 # ARTEX 탐지 규칙
 
-한국어 · [English](README.md)
+[中文](README.md) · [English](README.en.md) · 한국어
 
 > 이 디렉터리는 [방어·탐지 가이드(../docs/defense-ko.md)](../docs/defense-ko.md) 4절 "탐지 규칙"의
 > 의사 규칙을, 각자의 SIEM·EDR 질의 언어로 변환해 바로 배포할 수 있는 벤더 중립

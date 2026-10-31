@@ -1,6 +1,6 @@
 # ARTEX 탐지 규칙 (Sigma / 호스트·로그·SIEM)
 
-한국어 · [English](README.md)
+[中文](README.md) · [English](README.en.md) · 한국어
 
 이 디렉터리는 ARTEX 탐지 묶음에서 호스트·로그·SIEM 계층을 맡습니다. 여기 실린
 [Sigma](https://sigmahq.io) 규칙은 방어 가이드([한국어](../../docs/defense-ko.md) ·

@@ -1,6 +1,6 @@
 # ARTEX 호스트 분류(triage)
 
-한국어 · [English](README.md)
+[中文](README.md) · [English](README.en.md) · 한국어
 
 [`artex_host_triage.py`](artex_host_triage.py) 는 ARTEX 가 실행된 정황이 의심되는 **호스트 한 대에서 직접**
 돌리는 읽기 전용 분류(triage) 스크립트입니다. 이 디렉터리의 나머지 자료는 SIEM([Sigma](../sigma/))·네트워크
